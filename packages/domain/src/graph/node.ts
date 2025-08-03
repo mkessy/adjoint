@@ -14,8 +14,18 @@ export const NodeId = Schema.String.pipe(
 )
 export type NodeId = Schema.Schema.Type<typeof NodeId>
 
+export const SchemaId = Schema.String.pipe(
+  Schema.brand("SchemaId"),
+  Schema.annotations({
+    description: "A unique identifier for a schema.",
+    title: "SchemaId"
+  })
+)
+export type SchemaId = Schema.Schema.Type<typeof SchemaId>
+
 //
 // Errors
+
 //
 
 export class NodeValidationError extends Data.TaggedError("NodeValidationError")<{
@@ -76,11 +86,76 @@ export class IdentityNode extends Schema.TaggedClass<IdentityNode>()(
   BaseNodeFields
 ) {}
 
+export class SourceDataNode extends Schema.TaggedClass<SourceDataNode>()(
+  "SourceDataNode",
+  {
+    ...BaseNodeFields,
+    sourceUri: Schema.String.pipe(
+      Schema.annotations({
+        description: "The URI of the source data."
+      })
+    )
+  }
+) {}
+
+export class SchemaNode extends Schema.TaggedClass<SchemaNode>()(
+  "SchemaNode",
+  {
+    ...BaseNodeFields,
+    schemaId: SchemaId,
+    definition: Schema.Any.pipe(
+      Schema.annotations({
+        description: "The effect schema definition."
+      })
+    )
+  }
+) {
+}
+
+export const RecursionScheme = Schema.Literal(
+  "Catamorphism",
+  "Zygomorphism",
+  "Histomorphism",
+  "Paramorphism",
+  "Functor"
+)
+export type RecursionScheme = Schema.Schema.Type<typeof RecursionScheme>
+
+export class StrategyNode extends Schema.TaggedClass<StrategyNode>()(
+  "StrategyNode",
+  {
+    ...BaseNodeFields,
+    name: Schema.String,
+    recursionScheme: RecursionScheme,
+    inputSchema: Schema.Any.pipe(
+      Schema.annotations({
+        description: "A schema that describes the shape of the data and context (L(in))"
+      })
+    ),
+    outputSchema: Schema.Any.pipe(
+      Schema.annotations({
+        description: "A schema that describes the output shape"
+      })
+    ),
+    logic: Schema.Any.pipe(
+      Schema.annotations({
+        description: "The algebra 'b' as a serializable transformation"
+      })
+    )
+  }
+) {}
+
 //
 // Graph Node Union and Schema
 //
 
-export const GraphNode = Schema.Union(CanonicalEntityNode, IdentityNode).pipe(
+export const GraphNode = Schema.Union(
+  CanonicalEntityNode,
+  IdentityNode,
+  SourceDataNode,
+  SchemaNode,
+  StrategyNode
+).pipe(
   Schema.annotations({
     identifier: "GraphNode",
     title: "Graph Node",
@@ -177,6 +252,113 @@ export const createIdentityNode = (props: {
   )
 
 /**
+ * Creates a SourceDataNode with proper timestamp and error handling
+ */
+export const createSourceDataNode = (props: {
+  readonly id: NodeId
+  readonly sourceUri: string
+  readonly lastSeenBy: NodeId
+}): Effect.Effect<SourceDataNode, NodeCreationError> =>
+  Effect.gen(function*() {
+    const createdAt = yield* DateTime.now
+    try {
+      return new SourceDataNode({
+        ...props,
+        createdAt
+      })
+    } catch (error) {
+      return yield* Effect.fail(
+        new NodeCreationError({
+          message: `Failed to create SourceDataNode: ${error}`,
+          tag: "SourceDataNode"
+        })
+      )
+    }
+  }).pipe(
+    Effect.tap((node) =>
+      Effect.logInfo("SourceDataNode created").pipe(
+        Effect.annotateLogs({
+          nodeId: node.id,
+          nodeType: node._tag
+        })
+      )
+    )
+  )
+
+/**
+ * Creates a SchemaNode with proper timestamp and error handling
+ */
+export const createSchemaNode = <A, I, R>(props: {
+  readonly id: NodeId
+  readonly schemaId: SchemaId
+  readonly definition: Schema.Schema<A, I, R>
+  readonly lastSeenBy: NodeId
+}): Effect.Effect<SchemaNode, NodeCreationError> =>
+  Effect.gen(function*() {
+    const createdAt = yield* DateTime.now
+    try {
+      return new SchemaNode({
+        ...props,
+        createdAt
+      })
+    } catch (error) {
+      return yield* Effect.fail(
+        new NodeCreationError({
+          message: `Failed to create SchemaNode: ${error}`,
+          tag: "SchemaNode"
+        })
+      )
+    }
+  }).pipe(
+    Effect.tap((node) =>
+      Effect.logInfo("SchemaNode created").pipe(
+        Effect.annotateLogs({
+          nodeId: node.id,
+          nodeType: node._tag
+        })
+      )
+    )
+  )
+
+/**
+ * Creates a StrategyNode with proper timestamp and error handling
+ */
+export const createStrategyNode = (props: {
+  readonly id: NodeId
+  readonly name: string
+  readonly recursionScheme: RecursionScheme
+  readonly inputSchema: Schema.Schema<any, any, any>
+  readonly outputSchema: Schema.Schema<any, any, any>
+  readonly logic: Schema.Schema<any, any, any>
+  readonly lastSeenBy: NodeId
+}): Effect.Effect<StrategyNode, NodeCreationError> =>
+  Effect.gen(function*() {
+    const createdAt = yield* DateTime.now
+    try {
+      return new StrategyNode({
+        ...props,
+        createdAt
+      })
+    } catch (error) {
+      return yield* Effect.fail(
+        new NodeCreationError({
+          message: `Failed to create StrategyNode: ${error}`,
+          tag: "StrategyNode"
+        })
+      )
+    }
+  }).pipe(
+    Effect.tap((node) =>
+      Effect.logInfo("StrategyNode created").pipe(
+        Effect.annotateLogs({
+          nodeId: node.id,
+          nodeType: node._tag
+        })
+      )
+    )
+  )
+
+/**
  * Pattern-matched factory for creating any GraphNode type
  */
 export const createNode = (
@@ -186,6 +368,9 @@ export const createNode = (
   Match.value(tag).pipe(
     Match.when("CanonicalEntityNode", () => createCanonicalEntityNode(props)),
     Match.when("IdentityNode", () => createIdentityNode(props)),
+    Match.when("SourceDataNode", () => createSourceDataNode(props)),
+    Match.when("SchemaNode", () => createSchemaNode(props)),
+    Match.when("StrategyNode", () => createStrategyNode(props)),
     Match.exhaustive
   )
 
@@ -200,6 +385,9 @@ export const matchNode = <R>(node: AnyNode) =>
   Match.value(node).pipe(
     Match.tag("CanonicalEntityNode", (entity): R => entity as R),
     Match.tag("IdentityNode", (identity): R => identity as R),
+    Match.tag("SourceDataNode", (source): R => source as R),
+    Match.tag("SchemaNode", (schema): R => schema as R),
+    Match.tag("StrategyNode", (strategy): R => strategy as R),
     Match.exhaustive
   )
 
@@ -209,7 +397,10 @@ export const matchNode = <R>(node: AnyNode) =>
 export const createNodeMatcher = <R>() =>
   Match.type<AnyNode>().pipe(
     Match.tag("CanonicalEntityNode", (entity): R => entity as R),
-    Match.tag("IdentityNode", (identity): R => identity as R)
+    Match.tag("IdentityNode", (identity): R => identity as R),
+    Match.tag("SourceDataNode", (source): R => source as R),
+    Match.tag("SchemaNode", (schema): R => schema as R),
+    Match.tag("StrategyNode", (strategy): R => strategy as R)
   )
 
 //
@@ -314,6 +505,21 @@ export const isCanonicalEntityNode = Schema.is(CanonicalEntityNode)
  * Type guard to check if a value is an IdentityNode
  */
 export const isIdentityNode = Schema.is(IdentityNode)
+
+/**
+ * Type guard to check if a value is a SourceDataNode
+ */
+export const isSourceDataNode = Schema.is(SourceDataNode)
+
+/**
+ * Type guard to check if a value is a SchemaNode
+ */
+export const isSchemaNode = Schema.is(SchemaNode)
+
+/**
+ * Type guard to check if a value is a StrategyNode
+ */
+export const isStrategyNode = Schema.is(StrategyNode)
 
 /**
  * Type guard to check if an unknown value is any valid GraphNode

@@ -1,9 +1,79 @@
 import { Chunk, Effect } from "effect"
-import type { AnyNode } from "./graph.js"
+import type * as N from "./node.js"
 
-const countAlgebra = (
-  _node: AnyNode,
-  children: Chunk.Chunk<number>
-): Effect.Effect<number> => {
-  return Effect.succeed(1 + Chunk.reduce(children, 0, (a, b) => a + b))
+/**
+ * An Algebra is a function that defines one step of a recursive computation.
+ * It takes a node and the results already computed for its children (`F<A>`)
+ * and produces a new result (`A`).
+ *
+ * This file defines the interfaces for different kinds of algebras, corresponding
+ * to different structural recursion schemes.
+ */
+
+/**
+ * A Catamorphism is a standard fold. The algebra for a catamorphism
+ * only has access to the results of its children.
+ *
+ * @param A The carrier type for the result of the fold.
+ * @param E The error type of the algebra.
+ * @param R The context required by the algebra.
+ */
+export interface CataAlgebra<A, E, R> {
+  (node: N.AnyNode, children: Chunk.Chunk<A>): Effect.Effect<A, E, R>
+}
+
+/**
+ * A Paramorphism is a fold that has access to both the original child nodes
+ * and the results of folding over them.
+ *
+ * @param A The carrier type for the result of the fold.
+ * @param E The error type of the algebra.
+ * @param R The context required by the algebra.
+ */
+export interface ParaAlgebra<A, E, R> {
+  (node: N.AnyNode, children: Chunk.Chunk<[A, N.AnyNode]>): Effect.Effect<A, E, R>
+}
+
+//
+// MARK: Concrete Algebra Implementations
+//
+
+/**
+ * A simple catamorphism algebra to count all nodes in a graph structure.
+ */
+export const count: CataAlgebra<number, never, never> = (
+  _node,
+  children
+) => {
+  const childrenCount = Chunk.reduce(children, 0, (sum, count) => sum + count)
+  return Effect.succeed(1 + childrenCount)
+}
+
+/**
+ * A catamorphism algebra to collect all node IDs into a Chunk.
+ */
+export const collectIds: CataAlgebra<Chunk.Chunk<N.NodeId>, never, never> = (
+  node,
+  children
+) => {
+  const childIds = Chunk.flatten(children)
+  return Effect.succeed(Chunk.append(childIds, node.id))
+}
+
+/**
+ * A paramorphism algebra that builds a string representation of the graph tree.
+ */
+export const drawTree: ParaAlgebra<string, never, never> = (
+  node,
+  children
+) => {
+  if (Chunk.isEmpty(children)) {
+    return Effect.succeed(node.id)
+  }
+  const childrenStrings = Chunk.map(children, ([childString, _]) => childString)
+  const indented = Chunk.map(childrenStrings, (s) => s.split("\n").map((l) => `  ${l}`).join("\n")).pipe(
+    Chunk.join("\n")
+  )
+
+  return Effect.succeed(`${node.id}\n${indented}`)
 }
