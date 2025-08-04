@@ -279,6 +279,87 @@ export const cata: {
   )
 })
 
+const paraRecursive = <A, E, R>(
+  graph: Graph,
+  algebra: Algebra.ParaAlgebra<A, E, R>,
+  memo: HashMap.HashMap<Node.NodeId, A>,
+  node: Node.AnyNode
+): Effect.Effect<[A, HashMap.HashMap<Node.NodeId, A>], E | GraphOperationError, R> => {
+  return pipe(
+    Effect.succeed(memo),
+    Effect.flatMap((memo) => {
+      if (HashMap.has(memo, node.id)) {
+        return Effect.succeed(
+          [HashMap.get(memo, node.id).pipe(Option.getOrThrow), memo] as [A, HashMap.HashMap<Node.NodeId, A>]
+        )
+      }
+
+      const children = getChildren(graph, node.id)
+
+      return pipe(
+        children,
+        Effect.forEach((child) => paraRecursive(graph, algebra, memo, child)),
+        Effect.map((childResults) => {
+          const newMemo = childResults.reduce((acc, [_, childMemo]) => {
+            return HashMap.union(acc, childMemo)
+          }, memo)
+
+          // For paramorphism, we pass both the computed values and the original children
+          const paraChildren = Chunk.fromIterable(
+            Chunk.toReadonlyArray(children).map((child, index) => [childResults[index][0], child] as [A, Node.AnyNode])
+          )
+
+          return [paraChildren, newMemo] as [Chunk.Chunk<[A, Node.AnyNode]>, HashMap.HashMap<Node.NodeId, A>]
+        }),
+        Effect.flatMap(([paraChildren, newMemo]) =>
+          algebra(node, paraChildren).pipe(
+            Effect.map((result) =>
+              [result, HashMap.set(newMemo, node.id, result)] as [A, HashMap.HashMap<Node.NodeId, A>]
+            )
+          )
+        )
+      )
+    })
+  )
+}
+
+/**
+ * Performs a paramorphism (para) over the graph starting from a root node.
+ * Unlike catamorphism, paramorphism provides access to both computed values and original children.
+ *
+ * @example
+ * ```ts
+ * // Data-first
+ * const result = await Effect.runPromise(para(graph, algebra, rootId))
+ *
+ * // Data-last (pipeable)
+ * const result = await Effect.runPromise(graph.pipe(para(algebra, rootId)))
+ * ```
+ */
+export const para: {
+  <A, E, R>(
+    algebra: Algebra.ParaAlgebra<A, E, R>,
+    root: Node.NodeId
+  ): (self: Graph) => Effect.Effect<A, E | GraphOperationError, R>
+  <A, E, R>(
+    self: Graph,
+    algebra: Algebra.ParaAlgebra<A, E, R>,
+    root: Node.NodeId
+  ): Effect.Effect<A, E | GraphOperationError, R>
+} = dual(3, <A, E, R>(
+  self: Graph,
+  algebra: Algebra.ParaAlgebra<A, E, R>,
+  root: Node.NodeId
+): Effect.Effect<A, E | GraphOperationError, R> => {
+  const startNode = HashMap.get(self.nodes, root).pipe(
+    Option.getOrThrowWith(() => new GraphOperationError({ message: `Root node ${root} not found in graph` }))
+  )
+
+  return paraRecursive(self, algebra, HashMap.empty(), startNode).pipe(
+    Effect.map(([result, _]) => result)
+  )
+})
+
 /**
  * Filters the graph, returning a new graph containing only the nodes
  * that satisfy the given predicate.

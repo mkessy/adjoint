@@ -64,9 +64,10 @@ export const transform: {
   // 2. The strategy's output schema becomes the new target.
   // We must create a new SchemaNode for it.
   const createdAt = DateTime.unsafeNow()
+  const newTargetSchemaId = `${strategy.id}-output-schema` as Node.NodeId
   const newTargetSchemaNode = new Node.SchemaNode({
-    id: strategy.outputSchema.ast.annotations._tag as unknown as Node.NodeId, // Generate proper ID
-    schemaId: strategy.outputSchema.ast.annotations._tag as unknown as Node.SchemaId,
+    id: newTargetSchemaId,
+    schemaId: newTargetSchemaId as unknown as Node.SchemaId,
     definition: strategy.outputSchema,
     createdAt,
     lastSeenBy: strategy.id

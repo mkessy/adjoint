@@ -10,6 +10,7 @@ describe("Node Capabilities", () => {
     new Node.IdentityNode({
       id: id as Node.NodeId,
       createdAt: DateTime.unsafeNow(),
+
       lastSeenBy: id as Node.NodeId
     })
 

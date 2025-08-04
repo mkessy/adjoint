@@ -1,7 +1,8 @@
-import { Arbitrary, Chunk, DateTime, Effect, FastCheck } from "effect"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "@effect/vitest"
+import { Chunk, DateTime, Effect, FastCheck } from "effect"
 import * as Algebra from "../../src/graph/algebra.js"
-import { Graph, Node } from "../../src/graph/index.js"
+import * as Graph from "../../src/graph/graph.js"
+import * as Node from "../../src/graph/node.js"
 import type * as Capabilities from "../../src/node/capabilities.js"
 import * as Predicate from "../../src/node/predicate.js"
 

@@ -120,7 +120,7 @@ describe("Graph Algebra", () => {
       const graph = Graph.fromNodes([rootNode])
 
       const result = await Effect.runPromise(
-        pipe(graph, Graph.cata(Algebra.drawTree, rootNode.id))
+        pipe(graph, Graph.para(Algebra.drawTree, rootNode.id))
       )
 
       expect(result).toBe("root")
@@ -141,7 +141,7 @@ describe("Graph Algebra", () => {
       )
 
       const result = await Effect.runPromise(
-        pipe(graph, Graph.cata(Algebra.drawTree, rootNode.id))
+        pipe(graph, Graph.para(Algebra.drawTree, rootNode.id))
       )
 
       expect(result).toContain("root")
