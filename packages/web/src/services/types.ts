@@ -1,11 +1,12 @@
-import { Data, DateTime, Duration, Schema } from "effect"
-import { Graph, Node, NodeId } from "@adjoint/domain"
+import type { Graph } from "@adjoint/domain"
+import type { DateTime, Duration } from "effect"
+import { Data, Schema } from "effect"
 
 /**
  * Snapshot of graph state with metadata
  */
 export class GraphSnapshot extends Data.TaggedClass("GraphSnapshot")<{
-  readonly graph: Graph
+  readonly graph: Graph.Graph.Graph
   readonly timestamp: DateTime.DateTime
   readonly operation: "initial" | "transform" | "compose" | "undo" | "redo"
   readonly metadata: Record<string, unknown>
@@ -14,32 +15,34 @@ export class GraphSnapshot extends Data.TaggedClass("GraphSnapshot")<{
 /**
  * Graph transformation operations
  */
-export class GraphTransformation extends Data.TaggedEnum<{
-  AddNode: { 
-    node: Node.AnyNode
-    position?: { x: number; y: number } 
+export type GraphTransformation = Data.TaggedEnum<{
+  AddNode: {
+    node: Graph.Node.AnyNode
+    position?: { x: number; y: number }
   }
-  RemoveNode: { 
-    nodeId: NodeId 
+  RemoveNode: {
+    nodeId: Graph.Node.NodeId
   }
-  AddEdge: { 
-    edge: Edge.Edge 
+  AddEdge: {
+    edge: Graph.Edge.Edge
   }
-  RemoveEdge: { 
-    from: NodeId
-    to: NodeId
-    type: Edge.EdgeType 
+  RemoveEdge: {
+    from: Graph.Node.NodeId
+    to: Graph.Node.NodeId
+    type: string
   }
   ApplyAlgebra: {
-    algebraNode: Node.AlgebraNode
-    targetNodeId: NodeId
+    algebraNode: any
+    targetNodeId: Graph.Node.NodeId
     preview?: boolean
   }
   Compose: {
-    sourceGraph: Graph
-    transformation: Node.StrategyNode
+    sourceGraph: Graph.Graph.Graph
+    transformation: any
   }
-}>() {}
+}>
+
+export const GraphTransformation = Data.taggedEnum<GraphTransformation>()
 
 /**
  * Job identifier
@@ -52,71 +55,78 @@ export const JobId = {
 /**
  * Job execution status
  */
-export class JobStatus extends Data.TaggedEnum<{
-  Pending: {}
-  Running: { 
+export type JobStatus = Data.TaggedEnum<{
+  Pending: object
+  Running: {
     progress: number
-    currentStep: string 
+    currentStep: string
   }
-  Completed: { 
-    result: Graph
-    duration: Duration.Duration 
+  Completed: {
+    result: Graph.Graph.Graph
+    duration: Duration.Duration
   }
-  Failed: { 
+  Failed: {
     error: MaterializationError
-    duration: Duration.Duration 
+    duration: Duration.Duration
   }
-  Cancelled: { 
-    reason: string 
+  Cancelled: {
+    reason: string
   }
-}>() {}
+}>
+
+export const JobStatus = Data.taggedEnum<JobStatus>()
 
 /**
  * Job update events
  */
-export class JobUpdate extends Data.TaggedEnum<{
-  Started: { 
+export type JobUpdate = Data.TaggedEnum<{
+  Started: {
     jobId: JobId
-    timestamp: DateTime.DateTime 
+    timestamp: DateTime.DateTime
   }
-  Progress: { 
+  Progress: {
     jobId: JobId
     progress: number
-    message: string 
+    message: string
   }
-  Completed: { 
+  Completed: {
     jobId: JobId
-    result: Graph 
+    result: Graph.Graph.Graph
   }
-  Failed: { 
+  Failed: {
     jobId: JobId
-    error: MaterializationError 
+    error: MaterializationError
   }
-}>() {}
+}>
+
+export const JobUpdate = Data.taggedEnum<JobUpdate>()
 
 /**
  * Errors
  */
-export class MaterializationError extends Schema.TaggedError<MaterializationError>(
-  "MaterializationError"
-)({
-  message: Schema.String,
-  cause: Schema.optional(Schema.Unknown)
-}) {}
+export class MaterializationError extends Schema.TaggedError<MaterializationError>()(
+  "MaterializationError",
+  {
+    message: Schema.String,
+    cause: Schema.optional(Schema.Unknown)
+  }
+) {}
 
-export class PreviewError extends Schema.TaggedError<PreviewError>(
-  "PreviewError"  
-)({
-  message: Schema.String,
-  nodeId: NodeId,
-  algebraId: NodeId
-}) {}
+export class PreviewError extends Schema.TaggedError<PreviewError>()(
+  "PreviewError",
+  {
+    message: Schema.String,
+    nodeId: Schema.String,
+    algebraId: Schema.String
+  }
+) {}
 
-export class JobNotFoundError extends Schema.TaggedError<JobNotFoundError>(
-  "JobNotFoundError"
-)({
-  jobId: Schema.String
-}) {}
+export class JobNotFoundError extends Schema.TaggedError<JobNotFoundError>()(
+  "JobNotFoundError",
+  {
+    jobId: Schema.String
+  }
+) {}
 
 /**
  * Preview result

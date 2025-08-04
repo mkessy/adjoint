@@ -1,6 +1,6 @@
 // packages/web/src/services/Runtime.tsx
 import { ConfigProvider, Data, Effect, Equal, Layer, ManagedRuntime } from "effect"
-import React from "react"
+import * as React from "react"
 
 // MemoMap caches layer instances to avoid recreating identical layers
 // This is crucial for performance - layers can be expensive to create

@@ -2,7 +2,7 @@ import { describe, expect, it } from "@effect/vitest"
 import { HashMap, Schema } from "effect"
 import * as Effect from "effect/Effect"
 import * as Graph from "../src/graph/graph.js"
-import * as Node from "../src/graph/node.js"
+import * as Node from "../src/graph/node/node.js"
 
 describe("Graph API", () => {
   it("should create a graph from a schema", () =>

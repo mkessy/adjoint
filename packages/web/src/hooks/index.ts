@@ -2,4 +2,4 @@
  * @since 0.0.0
  */
 
-export * from "./useGraphWorkspaceRuntime.js"
+export * from "./useService.js"

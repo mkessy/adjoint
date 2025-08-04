@@ -1,6 +1,5 @@
 import { Chunk, Effect } from "effect"
-import type { NodePredicate } from "../node/capabilities.js"
-import type * as N from "./node.js"
+import type * as Node from "./node/index.js"
 
 /**
  * An Algebra is a function that defines one step of a recursive computation.
@@ -20,19 +19,22 @@ import type * as N from "./node.js"
  * @param R The context required by the algebra.
  */
 export interface CataAlgebra<A, E, R> {
-  (node: N.AnyNode, children: Chunk.Chunk<A>): Effect.Effect<A, E, R>
+  (node: Node.AnyNode, children: Chunk.Chunk<A>): Effect.Effect<A, E, R>
 }
 
 /**
  * A Paramorphism is a fold that has access to both the original child nodes
- * and the results of folding over them.
+ * and the results of folding over them.g
  *
  * @param A The carrier type for the result of the fold.
  * @param E The error type of the algebra.
  * @param R The context required by the algebra.
  */
 export interface ParaAlgebra<A, E, R> {
-  (node: N.AnyNode, children: Chunk.Chunk<[A, N.AnyNode]>): Effect.Effect<A, E, R>
+  (
+    node: Node.AnyNode,
+    children: Chunk.Chunk<[A, Node.NodePredicate<Node.AnyNode>]>
+  ): Effect.Effect<A, E, R>
 }
 
 //
@@ -43,7 +45,7 @@ export interface ParaAlgebra<A, E, R> {
  * A catamorphism algebra to count all nodes in a graph structure.
  */
 export const count = (
-  predicate?: NodePredicate<any>
+  predicate?: Node.NodePredicate<Node.AnyNode>
 ): CataAlgebra<number, never, never> =>
 (node, children) => {
   const childrenCount = Chunk.reduce(children, 0, (sum, count) => sum + count)
@@ -54,7 +56,7 @@ export const count = (
 /**
  * A catamorphism algebra to collect all node IDs into a Chunk.
  */
-export const collectIds: CataAlgebra<Chunk.Chunk<N.NodeId>, never, never> = (
+export const collectIds: CataAlgebra<Chunk.Chunk<Node.NodeId>, never, never> = (
   node,
   children
 ) => {

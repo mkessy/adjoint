@@ -1,7 +1,7 @@
 import { describe, expect, it } from "@effect/vitest"
 import { Chunk, DateTime, Effect, Equal, HashMap, Option, pipe } from "effect"
 import * as Graph from "../../src/graph/graph.js"
-import * as Node from "../../src/graph/node.js"
+import * as Node from "../../src/graph/node/node.js"
 import type * as Capabilities from "../../src/node/capabilities.js"
 
 describe("Graph Operations", () => {

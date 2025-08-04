@@ -1,8 +1,10 @@
 // packages/web/src/services/AppRuntime.tsx
+import { Engine, Graph, Node } from "@adjoint/domain"
 import { BrowserHttpClient } from "@effect/platform-browser"
 import { Layer } from "effect"
-import { ApiClientDefault } from "./ApiClient.js"
-import { makeReactRuntime } from "./Runtime.js"
+import { makeReactRuntime } from "./HttpRuntime.js"
+
+const { GraphWorkspaceRuntime, WorkspaceStateService, WorkspaceStateServiceLive } = Engine
 
 // Define the complete application layer
 // This is like a dependency injection container that knows how to wire everything
@@ -10,9 +12,7 @@ const AppLayer = Layer.mergeAll(
   // Platform layers
   BrowserHttpClient.layerXMLHttpRequest,
   // Our service layers
-  ApiClientDefault
-  //  SearchService.Default,
-  //  EntityResolver.Default
+  WorkspaceStateService.Default
 )
 
 // Create the runtime factory for our app

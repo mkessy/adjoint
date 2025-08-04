@@ -2,7 +2,7 @@ import { Chunk, DateTime, Effect, pipe } from "effect"
 import { describe, expect, it } from "vitest"
 import * as Algebra from "../../src/graph/algebra.js"
 import * as Graph from "../../src/graph/graph.js"
-import * as Node from "../../src/graph/node.js"
+import * as Node from "../../src/graph/node/node.js"
 import type * as Capabilities from "../../src/node/capabilities.js"
 import * as Predicate from "../../src/node/predicate.js"
 

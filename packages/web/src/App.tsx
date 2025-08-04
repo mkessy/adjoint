@@ -1,9 +1,5 @@
-import React from "react"
-import { GraphWorkspaceProvider } from "./hooks/useGraphWorkspaceRuntime.js"
-import { ObservableCanvas, ObservableCanvasStyles } from "./components/ObservableCanvas.js"
-import { NLPSearchBarStyles } from "./components/NLPSearchBar.js"
-import { CommutativeSquarePreviewStyles } from "./components/CommutativeSquarePreview.js"
-import "./App.css"
+import "./styles/index.css"
+import { AppRuntime } from "./services/AppRuntime.js"
 
 /**
  * Main application component
@@ -11,14 +7,11 @@ import "./App.css"
  */
 function App() {
   return (
-    <GraphWorkspaceProvider>
+    <AppRuntime.Provider>
       <div className="app">
-        <ObservableCanvas />
+        <h1>Hello, world!</h1>
       </div>
-      <style>{ObservableCanvasStyles}</style>
-      <style>{NLPSearchBarStyles}</style>
-      <style>{CommutativeSquarePreviewStyles}</style>
-    </GraphWorkspaceProvider>
+    </AppRuntime.Provider>
   )
 }
 

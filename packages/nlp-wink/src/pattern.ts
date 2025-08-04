@@ -208,7 +208,6 @@ const seq = (...parts: Array<string>): string => parts.join(" ")
 // === COMPOSED PATTERNS ===
 
 const buildPatterns = () => {
-  const _EVENT_BRACKET = bracket(EVENT_VERBS)
   const ROLE_BRACKET = bracket(ROLE_SINGLE_TOKENS)
   const TYPE_BRACKET = bracket(RELEASE_TYPE_SINGLE_TOKENS)
   const STATUS_BRACKET = bracket(STATUS_SINGLE_TOKENS)

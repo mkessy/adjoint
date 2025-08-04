@@ -1,5 +1,5 @@
 import { Data, Match, Schema } from "effect"
-import * as Node from "./node.js"
+import * as Node from "./node/node.js"
 
 // --- Edge Schema Definition ---
 

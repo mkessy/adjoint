@@ -4,9 +4,6 @@
 
 // Core services
 export * from "./WorkspaceStateService.js"
-export * from "./AdjointEngine.js"
-export * from "./DataStreamService.js"
-export * from "./NLPSearchService.js"
 
 // Service types
 export type {
@@ -16,6 +13,6 @@ export type {
   JobStatus,
   JobUpdate,
   MaterializationError,
-  PreviewResult,
-  PreviewError
+  PreviewError,
+  PreviewResult
 } from "./types.js"

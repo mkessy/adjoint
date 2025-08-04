@@ -1,5 +1,20 @@
 import type { ParseResult } from "effect"
-import { Arbitrary, Chunk, Data, DateTime, Effect, Equal, FastCheck, JSONSchema, Match, Schema, Stream } from "effect"
+import {
+  Arbitrary,
+  Chunk,
+  Context,
+  Data,
+  DateTime,
+  Effect,
+  Equal,
+  FastCheck,
+  JSONSchema,
+  Layer,
+  Match,
+  Ref,
+  Schema,
+  Stream
+} from "effect"
 
 //
 // Brands and Branded Types
@@ -589,3 +604,87 @@ export const generateBatch = (options: {
 
     return Chunk.fromIterable([...canonicalNodes, ...identityNodes])
   })
+
+// --- Capability Interfaces ---
+
+export interface NodePredicate<A extends AnyNode> {
+  readonly _id: symbol
+  readonly evaluate: (node: A) => boolean
+}
+
+export interface NodeEquivalence<A extends AnyNode> {
+  readonly _id: symbol
+  readonly equals: (self: A, that: A) => boolean
+}
+
+export interface NodeOrdering<A extends AnyNode> {
+  readonly _id: symbol
+  readonly compare: (self: A, that: A) => -1 | 0 | 1
+}
+
+// --- Capability Registry Service ---
+
+export class CapabilityRegistry extends Context.Tag("CapabilityRegistry")<
+  CapabilityRegistry,
+  {
+    readonly registerPredicate: <A extends AnyNode>(
+      predicate: NodePredicate<A>
+    ) => Effect.Effect<void>
+    readonly getPredicate: <A extends AnyNode>(
+      id: symbol
+    ) => Effect.Effect<NodePredicate<A>>
+  }
+>() {}
+
+// --- Live Implementation ---
+
+export const CapabilityRegistryLive = Layer.effect(
+  CapabilityRegistry,
+  Effect.gen(function*() {
+    const registry = yield* Ref.make(new Map<symbol, unknown>())
+    return CapabilityRegistry.of({
+      registerPredicate: (p) => Ref.update(registry, (m) => m.set(p._id, p)),
+      getPredicate: (id) => Ref.get(registry).pipe(Effect.map((m) => m.get(id) as any))
+    })
+  })
+)
+
+// --- Capability Interfaces ---
+
+export interface NodePredicate<A extends AnyNode> {
+  readonly _id: symbol
+  readonly evaluate: (node: A) => boolean
+}
+
+export interface NodeEquivalence<A extends AnyNode> {
+  readonly _id: symbol
+  readonly equals: (self: A, that: A) => boolean
+}
+
+export interface NodeOrdering<A extends AnyNode> {
+  readonly _id: symbol
+  readonly compare: (self: A, that: A) => -1 | 0 | 1
+}
+
+export const and = <A extends AnyNode>(
+  right: NodePredicate<A>
+) =>
+(self: NodePredicate<A>): NodePredicate<A> => ({
+  _id: Symbol.for(`and(${String(self._id)}, ${String(right._id)})`),
+  evaluate: (node) => self.evaluate(node as A) && right.evaluate(node as A)
+})
+
+export const or = <A extends AnyNode>(
+  right: NodePredicate<A>
+) =>
+(self: NodePredicate<A>): NodePredicate<A> => ({
+  _id: Symbol.for(`or(${String(self._id)}, ${String(right._id)})`),
+  evaluate: (node) => self.evaluate(node as A) || right.evaluate(node as A)
+})
+
+export const not = <A extends AnyNode>(
+  self: NodePredicate<A>
+): NodePredicate<A> => ({
+  _id: Symbol.for(`not(${String(self._id)})`),
+  evaluate: (node) => !self.evaluate(node as A)
+})

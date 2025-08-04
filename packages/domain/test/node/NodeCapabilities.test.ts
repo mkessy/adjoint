@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@effect/vitest"
 import { DateTime, Effect } from "effect"
-import * as Node from "../../src/graph/node.js"
+import * as Node from "../../src/graph/node/node.js"
 import * as Capabilities from "../../src/node/capabilities.js"
 import * as Predicate from "../../src/node/predicate.js"
 
