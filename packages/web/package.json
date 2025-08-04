@@ -1,5 +1,5 @@
 {
-    "name": "@crate/web",
+    "name": "@adjoint/web",
     "version": "0.0.0",
     "type": "module",
     "license": "MIT",
@@ -20,8 +20,8 @@
         "coverage": "vitest --coverage"
     },
     "dependencies": {
-        "@crate/domain": "workspace:^",
-        "@crate/nlp-wink": "workspace:^",
+        "@adjoint/web": "workspace:^",
+        "@adjoint/web/nlp-wink": "workspace:^",
         "@effect/platform": "latest",
         "@effect/platform-browser": "^0.67.2",
         "effect": "latest",

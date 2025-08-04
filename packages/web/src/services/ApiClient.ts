@@ -15,7 +15,7 @@ export interface ApiClient {
 }
 
 // Service tag
-export const ApiClient = Context.GenericTag<ApiClient>("@crate/web/ApiClient")
+export const ApiClient = Context.GenericTag<ApiClient>("@adjoint/web/ApiClient")
 
 // Service implementation
 export const ApiClientLive = Layer.effect(

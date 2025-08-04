@@ -1,6 +1,6 @@
+import type { TodoId } from "@adjoint/domain/TodosApi"
+import { TodosApi } from "@adjoint/domain/TodosApi"
 import { HttpApiClient } from "@effect/platform"
-import type { TodoId } from "@template/domain/TodosApi"
-import { TodosApi } from "@template/domain/TodosApi"
 import { Effect } from "effect"
 
 export class TodosClient extends Effect.Service<TodosClient>()("cli/TodosClient", {
