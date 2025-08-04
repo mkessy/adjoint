@@ -1,4 +1,5 @@
 import { Chunk, Effect } from "effect"
+import type { NodePredicate } from "../node/capabilities.js"
 import type * as N from "./node.js"
 
 /**
@@ -39,14 +40,15 @@ export interface ParaAlgebra<A, E, R> {
 //
 
 /**
- * A simple catamorphism algebra to count all nodes in a graph structure.
+ * A catamorphism algebra to count all nodes in a graph structure.
  */
-export const count: CataAlgebra<number, never, never> = (
-  _node,
-  children
-) => {
+export const count = (
+  predicate?: NodePredicate<any>
+): CataAlgebra<number, never, never> =>
+(node, children) => {
   const childrenCount = Chunk.reduce(children, 0, (sum, count) => sum + count)
-  return Effect.succeed(1 + childrenCount)
+  const selfCount = predicate ? (predicate.evaluate(node) ? 1 : 0) : 1
+  return Effect.succeed(selfCount + childrenCount)
 }
 
 /**

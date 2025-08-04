@@ -22,7 +22,7 @@ describe("Graph Algebras", () => {
         Graph.addEdge(Edge.create(node1, node3))
       )
 
-      const count = yield* Graph.cata(Algebra.count, "1" as Node.NodeId)(graph)
+      const count = yield* Graph.cata(Algebra.count(), "1" as Node.NodeId)(graph)
 
       expect(count).toBe(3)
     }))

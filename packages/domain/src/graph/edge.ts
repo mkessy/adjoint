@@ -12,12 +12,32 @@ export type Edge = Data.TaggedEnum<{
 
 export const Edge = Data.taggedEnum<Edge>()
 
+type EdgeSchema = Schema.Schema.Type<typeof EdgeSchema>
+
 export const EdgeSchema = Schema.Union(
   Schema.Struct({ _tag: Schema.Literal("CONFORMS_TO_SCHEMA"), from: Node.NodeId, to: Node.SchemaId }),
   Schema.Struct({ _tag: Schema.Literal("INPUT_TO"), from: Node.NodeId, to: Node.NodeId }),
   Schema.Struct({ _tag: Schema.Literal("PRODUCES"), from: Node.NodeId, to: Node.NodeId }),
   Schema.Struct({ _tag: Schema.Literal("HAS_CHILD"), from: Node.NodeId, to: Node.NodeId })
 )
+
+/**
+ * A pipeable pattern matcher for an `Edge`.
+ * This provides a clean, data-first API for handling different edge types.
+ *
+ * @param edge The `Edge` to match against.
+ * @param matcher An object containing handlers for each edge type.
+ * @returns The result of the matched handler.
+ */
+export const match = <A>(
+  matcher: {
+    readonly CONFORMS_TO_SCHEMA: (edge: Extract<Edge, { _tag: "CONFORMS_TO_SCHEMA" }>) => A
+    readonly INPUT_TO: (edge: Extract<Edge, { _tag: "INPUT_TO" }>) => A
+    readonly PRODUCES: (edge: Extract<Edge, { _tag: "PRODUCES" }>) => A
+    readonly HAS_CHILD: (edge: Extract<Edge, { _tag: "HAS_CHILD" }>) => A
+  }
+) =>
+(edge: Edge): A => Edge.$match(edge, matcher) as A
 
 // --- Pattern-Matching Based Constructor ---
 
