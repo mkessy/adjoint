@@ -1,21 +1,25 @@
-// packages/web/src/App.tsx
-import { RecentPlays } from "./components/plays/RecentPlays.js"
-import { AppRuntime } from "./services/AppRuntime.js"
-import "./styles/index.css"
+import React from "react"
+import { GraphWorkspaceProvider } from "./hooks/useGraphWorkspaceRuntime.js"
+import { ObservableCanvas, ObservableCanvasStyles } from "./components/ObservableCanvas.js"
+import { NLPSearchBarStyles } from "./components/NLPSearchBar.js"
+import { CommutativeSquarePreviewStyles } from "./components/CommutativeSquarePreview.js"
+import "./App.css"
 
-export function App() {
-  // The Provider manages the runtime lifecycle
-  // It will create services on mount and dispose them after unmount + timeout
+/**
+ * Main application component
+ * Implements the Observable-style interface with NLP search focus
+ */
+function App() {
   return (
-    <AppRuntime.Provider apiUrl={import.meta.env.VITE_API_URL}>
+    <GraphWorkspaceProvider>
       <div className="app">
-        <header className="app-header">
-          <h1>Crate Music Discovery</h1>
-        </header>
-        <main className="app-main">
-          <RecentPlays />
-        </main>
+        <ObservableCanvas />
       </div>
-    </AppRuntime.Provider>
+      <style>{ObservableCanvasStyles}</style>
+      <style>{NLPSearchBarStyles}</style>
+      <style>{CommutativeSquarePreviewStyles}</style>
+    </GraphWorkspaceProvider>
   )
 }
+
+export default App

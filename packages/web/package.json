@@ -3,10 +3,10 @@
     "version": "0.0.0",
     "type": "module",
     "license": "MIT",
-    "description": "The web interface for Crate",
+    "description": "The web interface for Adjoint",
     "repository": {
         "type": "git",
-        "url": "https://github.com/mkessy/crate",
+        "url": "https://github.com/mkessy/adjoint",
         "directory": "packages/web"
     },
     "scripts": {
@@ -20,20 +20,30 @@
         "coverage": "vitest --coverage"
     },
     "dependencies": {
-        "@adjoint/web": "workspace:^",
-        "@adjoint/web/nlp-wink": "workspace:^",
+        "@adjoint/domain": "workspace:^",
+        "@adjoint/nlp-wink": "workspace:^",
+        "@effect-rx/rx": "latest",
+        "@effect-rx/rx-react": "latest",
         "@effect/platform": "latest",
-        "@effect/platform-browser": "^0.67.2",
+        "@effect/platform-browser": "latest",
+        "@effect/sql": "latest",
+        "@effect/sql-sqlite-wasm": "latest",
         "effect": "latest",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
+        "typescript": "^5.9.2",
         "wink-eng-lite-web-model": "^1.8.1",
         "wink-nlp": "^2.4.0"
     },
     "devDependencies": {
-        "@types/react": "^18.3.3",
-        "@types/react-dom": "^18.3.0",
+        "@effect/vitest": "latest",
+        "@testing-library/jest-dom": "^6.4.2",
+        "@testing-library/react": "^14.2.1",
+        "@testing-library/user-event": "^14.5.2",
+        "@types/react": "^19.0.10",
+        "@types/react-dom": "^19.0.4",
         "@vitejs/plugin-react": "^4.3.1",
+        "jsdom": "^24.0.0",
         "vite": "^5.3.1",
         "vitest": "latest"
     },
