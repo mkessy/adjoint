@@ -1,5 +1,5 @@
 {
-  "name": "@template/domain",
+  "name": "@adjoint/domain",
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
@@ -20,8 +20,15 @@
     "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
     "build-annotate": "babel build/esm --plugins annotate-pure-calls --out-dir build/esm --source-maps",
     "check": "tsc -b tsconfig.json",
-    "test": "vitest",
-    "coverage": "vitest --coverage"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:math": "vitest run test/graph/PropertyBasedTests.test.ts --reporter=verbose",
+    "test:algebra": "vitest run test/graph/GraphAlgebra.test.ts --reporter=verbose",
+    "test:capabilities": "vitest run test/node/NodeCapabilities.test.ts --reporter=verbose",
+    "test:composition": "vitest run test/graph/GraphComposition.test.ts --reporter=verbose",
+    "test:operations": "vitest run test/graph/GraphOperations.test.ts --reporter=verbose",
+    "coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@effect/platform": "latest",

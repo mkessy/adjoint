@@ -1,5 +1,5 @@
 {
-  "name": "@template/server",
+  "name": "@adjoint/server",
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
@@ -22,7 +22,7 @@
   "dependencies": {
     "@effect/platform": "latest",
     "@effect/platform-node": "latest",
-    "@template/domain": "workspace:^",
+    "@adjoint/domain": "workspace:^",
     "effect": "latest"
   },
   "effect": {

@@ -1,5 +1,5 @@
 {
-  "name": "@template/cli",
+  "name": "@adjoint/cli",
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
@@ -27,14 +27,14 @@
     "@effect/cli": "latest",
     "@effect/platform": "latest",
     "@effect/platform-node": "latest",
-    "@template/domain": "workspace:^",
+    "@adjoint/domain": "workspace:^",
     "effect": "latest"
   },
   "devDependencies": {
     "@effect/cli": "latest",
     "@effect/platform": "latest",
     "@effect/platform-node": "latest",
-    "@template/domain": "workspace:^",
+    "@adjoint/domain": "workspace:^",
     "effect": "latest"
   },
   "effect": {

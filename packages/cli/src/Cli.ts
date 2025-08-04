@@ -1,5 +1,5 @@
+import { TodoId } from "@adjoint/domain/TodosApi"
 import { Args, Command, Options } from "@effect/cli"
-import { TodoId } from "@template/domain/TodosApi"
 import { TodosClient } from "./TodosClient.js"
 
 const todoArg = Args.text({ name: "todo" }).pipe(

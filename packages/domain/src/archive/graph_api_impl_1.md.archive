@@ -1,0 +1,178 @@
+# Implementation Plan v1: Expressive Queries with Node Capabilities
+
+## 1. Introduction & Goal
+
+This document builds upon the v0 plan. The primary goal of this phase is to significantly enhance the expressivity of the Graph API by introducing first-class, declarative services for common node operations: **predicates**, **equivalence**, and **ordering**. 
+
+By modeling these as distinct capabilities, we can move from passing raw functions (`(node) => boolean`) to composing named, reusable, and testable components, making the entire system more robust and declarative.
+
+This plan is based on a review of the existing `Graph`, `Composition`, and `Algebra` APIs and the Effect documentation on services and data modeling.
+
+## 2. Step 1: Implement the `NodeCapabilities` Service
+
+The foundation of this plan is a new service for registering and retrieving node capabilities.
+
+**File**: `packages/domain/src/node/capabilities.ts`
+
+**Objective**: Define the core interfaces for `NodePredicate`, `NodeEquivalence`, and `NodeOrdering`, and create a `CapabilityRegistry` service to manage them.
+
+**Implementation Details**:
+
+- **Interfaces**: Define the generic interfaces for each capability. Each will have a `_id: symbol` for unique identification.
+- **Service Tag**: Define `CapabilityRegistry` using `Context.Tag`.
+- **Live Implementation**: Create a `Live` layer for the `CapabilityRegistry` that uses a `Ref<Map<symbol, unknown>>` to store registered capabilities in memory.
+
+```typescript
+// packages/domain/src/node/capabilities.ts
+
+import { Context, Data, Effect, Layer, Ref } from "effect"
+import type * as Node from "./node"
+
+// --- Capability Interfaces ---
+export interface NodePredicate<A extends Node.AnyNode> { ... }
+export interface NodeEquivalence<A extends Node.AnyNode> { ... }
+export interface NodeOrdering<A extends Node.AnyNode> { ... }
+
+// --- Capability Registry Service ---
+export class CapabilityRegistry extends Context.Tag("CapabilityRegistry")<
+  CapabilityRegistry,
+  {
+    readonly registerPredicate: <A extends Node.AnyNode>(
+      predicate: NodePredicate<A>
+    ) => Effect.Effect<void>
+    readonly getPredicate: <A extends Node.AnyNode>(
+      id: symbol
+    ) => Effect.Effect<NodePredicate<A>>
+    // ... getters/setters for other capabilities
+  }
+>() {}
+
+// --- Live Implementation ---
+export const CapabilityRegistryLive = Layer.effect(
+  CapabilityRegistry,
+  Effect.gen(function*() {
+    const registry = yield* Ref.make(new Map<symbol, unknown>())
+    return CapabilityRegistry.of({
+      registerPredicate: (p) => Ref.update(registry, (m) => m.set(p._id, p)),
+      getPredicate: (id) => Ref.get(registry).pipe(Effect.map((m) => m.get(id) as any))
+    })
+  })
+)
+```
+
+## 3. Step 2: Implement Predicate Combinators
+
+To make predicates truly powerful, we need a way to compose them.
+
+**File**: `packages/domain/src/node/predicate.ts`
+
+**Objective**: Create a set of pipeable combinators for `NodePredicate` instances.
+
+**Implementation Details**:
+
+- Implement `and`, `or`, and `not` combinators.
+- These functions will take one or more predicates and return a *new* `NodePredicate` instance that encapsulates the combined logic.
+
+```typescript
+// packages/domain/src/node/predicate.ts
+import type { NodePredicate } from "./capabilities"
+
+export const and = <A extends Node.AnyNode>(
+  right: NodePredicate<A>
+) => (self: NodePredicate<A>): NodePredicate<A> => ({
+  _id: Symbol.for(`and(${String(self._id)}, ${String(right._id)})`),
+  evaluate: (node) => self.evaluate(node) && right.evaluate(node)
+})
+
+export const or = <A extends Node.AnyNode>(...) => ...
+export const not = <A extends Node.AnyNode>() => (self: NodePredicate<A>): NodePredicate<A> => ...
+```
+
+## 4. Step 3: Refactor the Graph API for Declarative Queries
+
+With the capabilities defined, we can now refactor the core `graph.ts` API to use them.
+
+**File**: `packages/domain/src/graph/graph.ts`
+
+**Objective**: Introduce new pipeable operators like `filter`, `find`, and `sort` that operate on `NodeCapability` instances instead of raw functions.
+
+**Implementation Details**:
+
+- **`filter`**: This function will take a `NodePredicate` and return a new, smaller `Graph` containing only the nodes that satisfy the predicate.
+- **`find`**: This will take a `NodePredicate` and return an `Effect<Option<Node.AnyNode>>`.
+- **`sort`**: This will take a `NodeOrdering` and return a `Chunk<Node.AnyNode>` of all nodes in the graph, sorted according to the capability.
+
+```typescript
+// packages/domain/src/graph/graph.ts
+
+import type { NodePredicate, NodeOrdering } from "../node/capabilities"
+
+/**
+ * Filters the graph, returning a new graph containing only the nodes
+ * that satisfy the given predicate.
+ */
+export const filter = <A extends Node.AnyNode>(
+  predicate: NodePredicate<A>
+) => (self: Graph): Graph => {
+  const newNodes = HashMap.filter(self.nodes, (node) => predicate.evaluate(node as A))
+  // Edge filtering logic would also be needed here
+  return new Graph({ nodes: newNodes, edges: self.edges })
+}
+
+/**
+ * Finds the first node in the graph that satisfies the predicate.
+ */
+export const find = <A extends Node.AnyNode>(
+  predicate: NodePredicate<A>
+) => (self: Graph): Effect.Effect<Option<A>> => {
+  return Effect.sync(() =>
+    Option.fromIterable(HashMap.values(self.nodes)).pipe(
+      Option.flatMap(Chunk.findFirst((node) => predicate.evaluate(node as A)))
+    )
+  )
+}
+```
+
+## 5. Step 4: Enhance Algebras with Capabilities
+
+Algebras can be made more generic and powerful by parameterizing them with capabilities.
+
+**File**: `packages/domain/src/graph/algebra.ts`
+
+**Objective**: Refactor existing algebras and create new ones that accept capabilities as arguments.
+
+**Implementation Details**:
+
+- The `count` algebra can be refactored to take an optional `NodePredicate`.
+- A new `equivalence` algebra can be created that uses a `NodeEquivalence` capability to check if all children of a node are equivalent.
+
+```typescript
+// packages/domain/src/graph/algebra.ts
+
+import type { NodePredicate } from "../node/capabilities"
+
+/**
+ * A catamorphism algebra to count nodes, optionally filtered by a predicate.
+ */
+export const count = (
+  predicate?: NodePredicate<any>
+): CataAlgebra<number, never, never> => (
+  node,
+  children
+) => {
+  const childrenCount = Chunk.reduce(children, 0, (sum, count) => sum + count)
+  const selfCount = predicate ? (predicate.evaluate(node) ? 1 : 0) : 1
+  return Effect.succeed(selfCount + childrenCount)
+}
+```
+
+## 6. Testing Strategy
+
+1.  **CapabilityRegistry**: Test registration and retrieval of predicates.
+2.  **Predicate Combinators**: Write unit tests for `and`, `or`, and `not` to ensure they combine predicates correctly.
+3.  **Graph API**: Test the new `filter`, `find`, and `sort` functions with various predicates and orderings.
+4.  **Algebras**: Test the enhanced `count` algebra with and without a predicate to verify its conditional logic.
+
+## 7. Summary
+
+This plan moves the project closer to its declarative vision. By formalizing predicates and other capabilities, we create a more expressive, type-safe, and compositional API. This foundation will be critical for building the high-level query engine and for verifying the algebraic properties of graph transformations.
