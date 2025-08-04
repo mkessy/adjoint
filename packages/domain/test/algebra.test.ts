@@ -4,7 +4,7 @@ import * as Effect from "effect/Effect"
 import * as Algebra from "../src/graph/algebra.js"
 import * as Edge from "../src/graph/edge.js"
 import * as Graph from "../src/graph/graph.js"
-import * as Node from "../src/graph/node.js"
+import * as Node from "../src/graph/node/node.js"
 
 describe("Graph Algebras", () => {
   it("should perform a catamorphism to count nodes", () =>
