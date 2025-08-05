@@ -4,6 +4,8 @@
 
 // Core services
 export * from "./AppRuntime.js"
+export * from "./LayoutRx.js"
+export * from "./WorkspaceRx.js"
 export * from "./WorkspaceStateService.js"
 
 // hooks
