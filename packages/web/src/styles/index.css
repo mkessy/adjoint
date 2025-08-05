@@ -98,8 +98,17 @@ body {
   flex-direction: column;
   max-width: var(--max-width);
   margin: 0 auto;
-  min-height: 100vh;
+  height: 100vh;
   position: relative;
+  flex: 1;
+}
+
+/* Adjoint Manuscript Layout - Single column */
+.adjoint-manuscript {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Main content body - optimal reading width with scroll */
@@ -110,7 +119,9 @@ body {
   padding: var(--space-md) var(--space-sm);
   padding-bottom: 120px; /* Space for fixed workpad */
   overflow-y: auto;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
   width: 100%;
+  box-sizing: border-box; /* Ensure padding is included in width calculation */
 }
 
 /* Content section - replaces data-stratum */
