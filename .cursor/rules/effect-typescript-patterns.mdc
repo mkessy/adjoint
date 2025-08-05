@@ -145,16 +145,46 @@ const result = Effect.succeed(data).pipe(
 ## Schema Integration
 
 ```typescript
-import { Schema } from "effect"
+import { Schema, HttpClientResponse } from "effect"
 
 // Define schemas for data validation
 const UserSchema = Schema.Struct({
   id: Schema.String.pipe(Schema.brand("UserId")),
   name: Schema.String,
-  email: Schema.String.pipe(Schema.format("email"))
+  email: Schema.String.pipe(Schema.format("email")),
+  createdAt: Schema.DateTimeUtc
 })
 
 type User = Schema.Schema.Type<typeof UserSchema>
+
+// Schema classes for rich domain objects
+export class SourceStream extends Schema.Class<SourceStream>("SourceStream")({
+  _tag: Schema.tag("SourceStream"),
+  source: Schema.String,
+  title: Schema.String,
+  infoHash: Schema.String,
+  quality: Schema.String,
+  seeds: Schema.Number,
+  peers: Schema.Number,
+  sizeBytes: Schema.optional(Schema.Number),
+  verified: Schema.optional(Schema.Boolean)
+}) {
+  static Array = Schema.Array(this)
+
+  // Rich domain methods
+  get sizeFormatted() {
+    return this.sizeBytes ? bytesToSize(this.sizeBytes) : "0B"
+  }
+}
+
+// HTTP response decoding
+export class ApiResponse extends Schema.Class<ApiResponse>("ApiResponse")({
+  data: Schema.Array(SourceStream),
+  total: Schema.Number,
+  page: Schema.Number
+}) {
+  static decodeResponse = HttpClientResponse.schemaBodyJson(this)
+}
 
 // Use in services
 const validateUser = (input: unknown): Effect.Effect<User, ValidationError> =>

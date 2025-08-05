@@ -84,6 +84,72 @@ export const derivedRx = Rx.make(
 )
 ```
 
+### Optimistic Updates
+
+Create optimistic versions for immediate UI feedback:
+
+```typescript
+// Base reactive value
+export const todosRx = Rx.make<Todo[]>(() => getCurrentTodos())
+
+// Optimistic version
+export const optimisticTodosRx = Rx.optimistic(todosRx)
+
+// Combine optimistic updates with Effect functions
+export const optimisticAddTodoRx = optimisticTodosRx.pipe(
+  Rx.optimisticFn({
+    updateToValue: (todo: string, current: Todo[]) => [
+      ...current,
+      { id: generateId(), text: todo, pending: true }
+    ],
+    fn: MyRxRuntime.fn(
+      Effect.fnUntraced(function* (todo: string) {
+        const service = yield* MyService
+        return yield* service.addTodo(todo)
+      })
+    )
+  })
+)
+```
+
+### Context Access in Functions
+
+Use the `get` parameter for reactive context access:
+
+```typescript
+export const contextualActionRx = MyRxRuntime.fn(
+  Effect.fnUntraced(function* (input: string, get: Rx.FnContext) {
+    // Access other reactive values
+    const currentMode = get(modeRx)
+    const isEnabled = get(enabledRx)
+
+    if (!isEnabled) {
+      yield* Effect.fail("Action not enabled")
+    }
+
+    const service = yield* MyService
+    return yield* service.performAction(input, currentMode)
+  })
+)
+```
+
+### Stream Integration
+
+Convert Effect Streams to Rx objects:
+
+```typescript
+export const eventsRx = Rx.make(
+  Effect.gen(function* () {
+    const service = yield* MyService
+    return service.eventStream.pipe(
+      Stream.take(100),
+      Stream.runCollect,
+      Effect.map(Chunk.toArray)
+    )
+  })
+)
+```
+
 ## Type Patterns
 
 Always specify proper Result types:

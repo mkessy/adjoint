@@ -11,6 +11,7 @@ description: Web services layer for Rx object management and re-exports
 - Create web-specific UI state as Rx objects
 - Provide clean API boundary between domain and UI
 - Combine domain and UI reactive values when needed
+  G
 
 ## Re-export Pattern
 
@@ -40,6 +41,10 @@ export const selectedItemIdRx = Rx.state<string | null>(null)
 export const isLoadingRx = Rx.state<boolean>(false)
 export const uiModeRx = Rx.state<"grid" | "list">("grid")
 export const sidebarOpenRx = Rx.state<boolean>(false)
+
+// Simple reactive values
+export const updateFailsRx = Rx.make(false)
+export const enabledRx = Rx.make(true)
 ```
 
 ## Derived Reactive Values
@@ -59,6 +64,27 @@ export const selectedItemRx = Rx.make(
     return items.find((item) => item.id === selectedId) ?? null
   })
 )
+```
+
+## Action State Management
+
+Monitor action states for UI feedback:
+
+```typescript
+// Actions that return state information
+export const addTodoRx = MyRxRuntime.fn(
+  Effect.fnUntraced(function* (todo: string, get: Rx.FnContext) {
+    const shouldFail = get(updateFailsRx)
+    if (shouldFail) {
+      yield* Effect.fail("Simulated failure")
+    }
+    return yield* MyService.addTodo(todo)
+  })
+)
+
+// Monitor action states in components:
+// addTodoRx.waiting - boolean indicating if action is running
+// addTodoRx.result - Result of the last action
 ```
 
 ## Local Storage Integration

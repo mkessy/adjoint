@@ -14,20 +14,37 @@ React components using effect-rx hooks for reactive UI updates. No direct Effect
 ### Reading Reactive Values
 
 ```typescript
-import { useRxSuspenseSuccess, useRx } from "@effect-rx/rx-react"
+import {
+  useRxSuspenseSuccess,
+  useRx,
+  useRxValue,
+  useRxRefresh
+} from "@effect-rx/rx-react"
 
 // For domain data (with suspense)
 const data = useRxSuspenseSuccess(dataRx)
 
-// For UI state (immediate)
+// For UI state (immediate read/write)
 const [uiState, setUiState] = useRx(uiStateRx)
+
+// For read-only reactive values
+const todos = useRxValue(todosRx)
+const optimisticTodos = useRxValue(optimisticTodosRx)
+
+// For action state monitoring
+const addTodoState = useRxValue(addTodoRx)
+const isProcessing = addTodoState.waiting
+
+// For manual refresh capability
+const refreshData = useRxRefresh(dataRx)
 ```
 
 ### Action Functions
 
 ```typescript
-import { useRxSetPromise } from "@effect-rx/rx-react"
+import { useRxSetPromise, useRxSet } from "@effect-rx/rx-react"
 
+// For async actions with Result handling
 const performAction = useRxSetPromise(actionRx)
 
 const handleClick = async () => {
@@ -36,6 +53,14 @@ const handleClick = async () => {
     onSuccess: (value) => console.log("Success:", value),
     onFailure: (error) => console.error("Error:", error)
   })
+}
+
+// For optimistic actions (immediate UI feedback)
+const addTodo = useRxSet(optimisticAddTodoRx)
+const removeTodo = useRxSet(optimisticRemoveTodoRx)
+
+const handleAddTodo = () => {
+  addTodo(inputValue) // UI updates immediately
 }
 ```
 
@@ -104,6 +129,42 @@ const selectedItem = React.useMemo(
   () => items.value.find((item) => item.id === selectedId),
   [items.value, selectedId]
 )
+```
+
+## Optimistic Updates
+
+Handle immediate UI feedback with eventual consistency:
+
+```typescript
+function TodoList() {
+  // Show optimistic version for immediate updates
+  const optimisticTodos = useRxValue(optimisticTodosRx)
+  const trueTodos = useRxValue(todosRx) // Actual server state
+
+  // Action functions for optimistic updates
+  const addTodo = useRxSet(optimisticAddTodoRx)
+  const removeTodo = useRxSet(optimisticRemoveTodoRx)
+
+  // Monitor action states
+  const addTodoState = useRxValue(addTodoRx)
+  const removeTodoState = useRxValue(removeTodoRx)
+
+  return (
+    <div>
+      {optimisticTodos.map((todo) => (
+        <div key={todo.id}>
+          {todo.text}
+          <button
+            onClick={() => removeTodo(todo.id)}
+            disabled={removeTodoState.waiting}
+          >
+            {removeTodoState.waiting ? "Removing..." : "Remove"}
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
 ```
 
 ## Error Handling

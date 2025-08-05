@@ -113,6 +113,12 @@ importers:
 
   packages/domain:
     dependencies:
+      '@effect-rx/rx':
+        specifier: latest
+        version: 0.48.3(@effect/platform@0.90.0(effect@3.17.6))(effect@3.17.6)
+      '@effect-rx/rx-react':
+        specifier: latest
+        version: 0.41.1(@effect/platform@0.90.0(effect@3.17.6))(effect@3.17.6)(react@18.3.1)(scheduler@0.23.2)
       '@effect/platform':
         specifier: latest
         version: 0.90.0(effect@3.17.6)
@@ -165,10 +171,10 @@ importers:
         version: link:../nlp-wink/dist
       '@effect-rx/rx':
         specifier: latest
-        version: 0.47.6(@effect/platform@0.90.0(effect@3.17.6))(effect@3.17.6)
+        version: 0.48.3(@effect/platform@0.90.0(effect@3.17.6))(effect@3.17.6)
       '@effect-rx/rx-react':
         specifier: latest
-        version: 0.40.9(@effect/platform@0.90.0(effect@3.17.6))(effect@3.17.6)(react@18.3.1)(scheduler@0.23.2)
+        version: 0.41.1(@effect/platform@0.90.0(effect@3.17.6))(effect@3.17.6)(react@18.3.1)(scheduler@0.23.2)
       '@effect/platform':
         specifier: latest
         version: 0.90.0(effect@3.17.6)
@@ -386,15 +392,15 @@ packages:
   '@dprint/typescript@0.91.8':
     resolution: {integrity: sha512-tuKn4leCPItox1O4uunHcQF0QllDCvPWklnNQIh2PiWWVtRAGltJJnM4Cwj5AciplosD1Hiz7vAY3ew3crLb3A==}
 
-  '@effect-rx/rx-react@0.40.9':
-    resolution: {integrity: sha512-jsP0OzNk3xsXsaN9BSLJQhrb/Avt+fCYHTvnzs0T+NG81tD2lfWZiwaaDOOr5oSE01EhBoBOvJkfNkqS+P7olA==}
+  '@effect-rx/rx-react@0.41.1':
+    resolution: {integrity: sha512-95uL5y1xkJtkQGE176Piy3Bp7blPrylnMJycCy/wsnj3vhcGFvAR8bTa6js6F9E3wKW8l217lbQWuakPtOqqrg==}
     peerDependencies:
       effect: ^3.17
       react: '>=18 <20'
       scheduler: '*'
 
-  '@effect-rx/rx@0.47.6':
-    resolution: {integrity: sha512-WYL3NPpOV//+Nn7szWA6rB/OCb9pvT7PffWru4FZ7SH53Pk0nIcQOUXqnqnsmuXVpMQYmGOlQfKrbjxyk7EQmA==}
+  '@effect-rx/rx@0.48.3':
+    resolution: {integrity: sha512-0tpf7Qk9dnJXb2iRaSdYUDihTetQWf83jS39wpAJ4sEBZ0rFUbhn/9zAo4QSjGvENCoEDyLxISbUMIXogbxbcw==}
     peerDependencies:
       '@effect/platform': ^0.90.0
       effect: ^3.17.0
@@ -3585,16 +3591,16 @@ snapshots:
 
   '@dprint/typescript@0.91.8': {}
 
-  '@effect-rx/rx-react@0.40.9(@effect/platform@0.90.0(effect@3.17.6))(effect@3.17.6)(react@18.3.1)(scheduler@0.23.2)':
+  '@effect-rx/rx-react@0.41.1(@effect/platform@0.90.0(effect@3.17.6))(effect@3.17.6)(react@18.3.1)(scheduler@0.23.2)':
     dependencies:
-      '@effect-rx/rx': 0.47.6(@effect/platform@0.90.0(effect@3.17.6))(effect@3.17.6)
+      '@effect-rx/rx': 0.48.3(@effect/platform@0.90.0(effect@3.17.6))(effect@3.17.6)
       effect: 3.17.6
       react: 18.3.1
       scheduler: 0.23.2
     transitivePeerDependencies:
       - '@effect/platform'
 
-  '@effect-rx/rx@0.47.6(@effect/platform@0.90.0(effect@3.17.6))(effect@3.17.6)':
+  '@effect-rx/rx@0.48.3(@effect/platform@0.90.0(effect@3.17.6))(effect@3.17.6)':
     dependencies:
       '@effect/platform': 0.90.0(effect@3.17.6)
       effect: 3.17.6
