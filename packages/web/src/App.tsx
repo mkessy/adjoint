@@ -1,4 +1,5 @@
 import "./styles/index.css"
+import GraphWorkspace from "./components/GraphWorkspace.js"
 import { AppRuntime } from "./services/AppRuntime.js"
 
 /**
@@ -8,9 +9,7 @@ import { AppRuntime } from "./services/AppRuntime.js"
 function App() {
   return (
     <AppRuntime.Provider>
-      <div className="app">
-        <h1>Hello, world!</h1>
-      </div>
+      <GraphWorkspace />
     </AppRuntime.Provider>
   )
 }
