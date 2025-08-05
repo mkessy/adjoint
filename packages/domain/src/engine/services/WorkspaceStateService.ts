@@ -140,8 +140,8 @@ export class WorkspaceStateService extends Context.Tag("WorkspaceStateService")<
     readonly eventStream: Stream.Stream<WorkspaceEvent, never>
     readonly commitGraph: (
       graph: Graph,
-      operation?: string,
-      metadata?: Record<string, unknown>
+      operation: string,
+      metadata: Record<string, unknown>
     ) => Effect.Effect<GraphSnapshot, never>
     readonly undo: Effect.Effect<Option.Option<Graph>, never>
     readonly redo: Effect.Effect<Option.Option<Graph>, never>

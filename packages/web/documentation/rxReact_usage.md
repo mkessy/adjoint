@@ -3465,7 +3465,6 @@ fn: addTodoRx,
 
 export const removeTodoRx = Rx.fn(
 Effect.fnUntraced(function* (id: number, get: Rx.FnContext) {
-console.log("removeTodoRx", id);
 yield* Effect.sleep("1 second");
 if (get(updateFailsRx)) {
 yield\* Effect.fail("Update failed");

@@ -4,6 +4,7 @@
 
 // Core services
 export * from "./WorkspaceStateService.js"
+export * from "./WorkspaceRx.js"
 
 // Service types
 export type {
