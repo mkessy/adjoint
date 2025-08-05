@@ -3,9 +3,12 @@
  */
 
 // Core services
+export * from "./AppRuntime.js"
 export * from "./WorkspaceStateService.js"
-export * from "./WorkspaceRx.js"
 
+// hooks
+
+// types
 // Service types
 export type {
   GraphSnapshot,

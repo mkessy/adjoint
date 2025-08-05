@@ -5,15 +5,10 @@ import { Layer } from "effect"
 import { makeReactRuntime } from "./HttpRuntime.js"
 
 // Create a singleton instance of GraphWorkspaceRuntime
-// This will be our main interface to the domain layer
-export const graphWorkspaceRuntime = Engine.GraphWorkspaceRuntime.make({
-  maxHistorySize: 100,
-  enableMetrics: true,
-  logLevel: "info"
-})
+// This will be our main interface to the domain laye
+export const graphWorkspaceRxRuntime = Engine.GraphWorkspaceRxRuntime
 
 // Create workspace hooks for React components
-export const workspaceHooks = Engine.createWorkspaceHooks(graphWorkspaceRuntime)
 
 // Define the complete application layer
 // This is like a dependency injection container that knows how to wire everything
@@ -34,9 +29,3 @@ export const useAppRuntime = AppRuntime.useRuntime
 export const useAppEffect = AppRuntime.useEffect
 
 // Export workspace-specific hooks
-export const {
-  actions: workspaceActions,
-  useCurrentGraph,
-  useWorkspaceEvents,
-  useWorkspaceStats
-} = workspaceHooks
