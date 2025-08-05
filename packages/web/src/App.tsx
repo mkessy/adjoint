@@ -1,15 +1,15 @@
 import "./styles/index.css"
-import GraphWorkspace from "./components/GraphWorkspace.js"
+import { LayoutVisualization } from "./components/examples/index.js"
 import { AppRuntime } from "./services/AppRuntime.js"
 
 /**
  * Main application component
- * Implements the Observable-style interface with NLP search focus
+ * Showcasing the manuscript layout system with token visualization
  */
 function App() {
   return (
     <AppRuntime.Provider>
-      <GraphWorkspace />
+      <LayoutVisualization />
     </AppRuntime.Provider>
   )
 }
