@@ -1,0 +1,124 @@
+---
+alwaysApply: true
+---
+
+# Architecture Layer Separation
+
+## Three-Layer Architecture
+
+### 1. Domain Layer (`packages/domain/src/`)
+
+**Purpose**: Pure business logic with Effect
+
+- ✅ Effect services, streams, and core types
+- ✅ Graph operations, validation, state management
+- ✅ Error handling with branded errors
+- ❌ No React, no effect-rx, no UI concerns
+
+### 2. Integration Layer (`packages/domain/src/engine/`)
+
+**Purpose**: Effect-to-RX bridge
+
+- ✅ Convert Effect services to Rx objects using `Rx.runtime()`
+- ✅ Create reactive values with `runtime.rx()` and `Rx.make()`
+- ✅ Action functions with `runtime.fn()`
+- ❌ No React hooks, no component logic
+
+### 3. UI Layer (`packages/web/src/`)
+
+**Purpose**: React components with reactive state
+
+- ✅ effect-rx hooks (`useRxSuspenseSuccess`, `useRxSetPromise`)
+- ✅ Component-local state with React hooks
+- ✅ Web-specific Rx objects for UI state
+- ❌ No direct Effect usage, no domain service imports
+
+## Import Rules by Layer
+
+### Domain Layer Imports
+
+```typescript
+// ✅ Allowed
+import { Effect, Stream, Layer, Context } from "effect"
+import { MyOtherDomainService } from "./OtherService.js"
+
+// ❌ Forbidden
+import React from "react"
+import { Rx } from "@effect-rx/rx"
+import { useRx } from "@effect-rx/rx-react"
+```
+
+### Integration Layer Imports
+
+```typescript
+// ✅ Allowed
+import { Rx } from "@effect-rx/rx"
+import { Effect, Result } from "effect"
+import { MyDomainService } from "../services/MyService.js"
+
+// ❌ Forbidden
+import React from "react"
+import { useRx } from "@effect-rx/rx-react"
+```
+
+### UI Layer Imports
+
+```typescript
+// ✅ Allowed
+import React from "react"
+import { useRxSuspenseSuccess } from "@effect-rx/rx-react"
+import { dataRx } from "../services/DataRx.js"
+import { Result } from "effect" // Only for Result handling
+
+// ❌ Forbidden
+import { Effect } from "effect" // Don't use Effect directly
+import { MyDomainService } from "@adjoint/domain"
+```
+
+## Data Flow
+
+```
+Domain Services (Effect)
+    ↓
+Integration Layer (Rx objects)
+    ↓
+Web Services (Re-exports + UI Rx)
+    ↓
+React Components (effect-rx hooks)
+```
+
+## File Path Patterns
+
+### Domain Services
+
+- `packages/domain/src/services/MyService.ts`
+- `packages/domain/src/types/MyTypes.ts`
+
+### Integration Layer
+
+- `packages/domain/src/engine/services/MyRxRuntime.ts`
+
+### Web Services
+
+- `packages/web/src/services/MyRx.ts`
+
+### React Components
+
+- `packages/web/src/components/MyComponent.tsx`
+
+## Key Principles
+
+1. **Unidirectional Dependencies**: UI → Web Services → Integration → Domain
+2. **Pure Domain**: Domain never imports from higher layers
+3. **Reactive UI**: UI gets updates automatically via effect-rx
+4. **Clean Boundaries**: Each layer has specific responsibilities
+5. **Type Safety**: Full TypeScript support throughout
+
+## Common Anti-Patterns to Avoid
+
+- ❌ Importing React in domain layer
+- ❌ Using Effect directly in React components
+- ❌ Creating Effect runtimes in web layer
+- ❌ Mixing business logic in UI components
+- ❌ Direct domain service usage in React
+- ❌ Manual state synchronization between layers

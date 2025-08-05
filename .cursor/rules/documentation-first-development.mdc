@@ -1,0 +1,192 @@
+---
+alwaysApply: true
+---
+
+# Documentation-First Development
+
+## Always Consult Documentation Before Implementation
+
+Before implementing ANY Effect, Effect-RX, or related patterns, ALWAYS:
+
+1. **Search Effect Documentation** using the MCP documentation search
+2. **Look for existing patterns** and best practices
+3. **Check for official interfaces** and recommended approaches
+4. **Review integration examples** in the documentation
+
+## Required Documentation Search Process
+
+### 1. Effect Core Patterns
+
+Before implementing Effect services, streams, or error handling:
+
+```
+Search: "Effect service patterns", "Effect error handling", "Effect stream processing"
+```
+
+### 2. Effect-RX Integration (Frontend/UI Layer)
+
+Before implementing reactive UI patterns:
+
+```
+Search: "effect-rx react integration", "effect-rx hooks patterns", "Rx reactive values"
+```
+
+**CRITICAL**: Always check effect-rx documentation for:
+
+- React hook patterns (`useRx`, `useRxSuspenseSuccess`, `useRxSetPromise`)
+- Reactive value creation (`Rx.make`, `Rx.state`, `runtime.rx`)
+- Action function patterns (`runtime.fn`, `Effect.fnUntraced`)
+- Result handling in React components
+
+### 3. Integration Layer Patterns
+
+Before bridging Effect services to reactive UI:
+
+```
+Search: "Rx runtime patterns", "Effect Stream to Rx conversion", "service integration"
+```
+
+### 4. Domain Layer Services
+
+Before implementing domain services:
+
+```
+Search: "Effect Context.Tag patterns", "Effect Layer composition", "Effect service definition"
+```
+
+## Documentation Search Commands
+
+Use these specific search queries based on your implementation needs:
+
+### General Effect Patterns
+
+- `"Effect.gen generator functions"`
+- `"Effect error handling branded errors"`
+- `"Effect service Context.Tag Layer"`
+- `"Effect pipe vs chain style"`
+
+### Effect-RX Specific (Frontend)
+
+- `"effect-rx React hooks useRx patterns"`
+- `"effect-rx Rx.make reactive values"`
+- `"effect-rx runtime.fn action functions"`
+- `"effect-rx Result handling React"`
+- `"effect-rx Suspense integration"`
+
+### Stream Processing
+
+- `"Effect Stream processing patterns"`
+- `"Stream reactive programming"`
+- `"Stream error handling"`
+
+### Schema Integration
+
+- `"Effect Schema validation patterns"`
+- `"Schema branded types"`
+- `"Schema error handling"`
+
+## Implementation Workflow
+
+1. **STOP** - Don't start coding immediately
+2. **SEARCH** - Use MCP documentation search for relevant patterns
+3. **REVIEW** - Check official examples and interfaces
+4. **ADAPT** - Apply documented patterns to your specific use case
+5. **IMPLEMENT** - Write code following documented best practices
+
+## Layer-Specific Documentation Focus
+
+### Domain Layer (`packages/domain/src/`)
+
+Focus on:
+
+- Effect service definition patterns
+- Error handling with branded types
+- Stream processing for reactive data
+- Layer composition for dependency injection
+
+### Integration Layer (`packages/domain/src/engine/`)
+
+Focus on:
+
+- Effect-RX runtime creation patterns
+- Converting Effect to Rx reactive values
+- Action function patterns with `runtime.fn`
+- Bridging domain services to UI
+
+### UI Layer (`packages/web/src/`)
+
+Focus on:
+
+- **Effect-RX React integration patterns**
+- React hooks for reactive values (`useRxSuspenseSuccess`)
+- Action hooks (`useRxSetPromise`)
+- Result handling in components
+- Suspense integration patterns
+- Error boundary patterns with Results
+
+## Common Documentation Searches by Task
+
+### When Creating Services
+
+```
+Search: "Effect Context.Tag service definition patterns"
+Search: "Effect Layer composition dependency injection"
+```
+
+### When Handling Errors
+
+```
+Search: "Effect branded error types Data.TaggedError"
+Search: "Effect error handling catchAll patterns"
+```
+
+### When Creating Reactive UI
+
+```
+Search: "effect-rx React hooks integration patterns"
+Search: "effect-rx useRxSuspenseSuccess Suspense"
+```
+
+### When Processing Streams
+
+```
+Search: "Effect Stream processing reactive patterns"
+Search: "Stream error handling retry patterns"
+```
+
+### When Integrating with External APIs
+
+```
+Search: "Effect HttpClient integration patterns"
+Search: "Effect platform browser integration"
+```
+
+## Anti-Pattern: Implementation Without Documentation
+
+❌ **NEVER** implement based on assumptions or guesswork
+❌ **NEVER** copy patterns from random sources without checking official docs
+❌ **NEVER** mix patterns from different versions or unofficial sources
+
+✅ **ALWAYS** verify patterns against official Effect documentation
+✅ **ALWAYS** use MCP documentation search before implementing
+✅ **ALWAYS** follow officially documented integration patterns
+
+## Benefits of Documentation-First Approach
+
+1. **Correct Patterns**: Use officially supported patterns
+2. **Best Practices**: Follow recommended approaches
+3. **Error Avoidance**: Prevent common mistakes
+4. **Consistency**: Maintain consistent code style
+5. **Future-Proof**: Use stable, maintained patterns
+6. **Performance**: Use optimized, well-tested approaches
+
+## Remember: Documentation is Your First Tool
+
+The Effect ecosystem is rich and well-documented. Using the MCP documentation search ensures you:
+
+- Learn proper patterns before implementing
+- Avoid reinventing existing solutions
+- Follow community best practices
+- Build maintainable, correct code
+
+**Always search first, implement second!**

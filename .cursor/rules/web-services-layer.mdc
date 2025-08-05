@@ -1,0 +1,147 @@
+---
+globs: packages/web/src/services/**/*.ts
+description: Web services layer for Rx object management and re-exports
+---
+
+# Web Services Layer Patterns
+
+## Architecture Purpose
+
+- Re-export domain Rx objects for React components
+- Create web-specific UI state as Rx objects
+- Provide clean API boundary between domain and UI
+- Combine domain and UI reactive values when needed
+
+## Re-export Pattern
+
+Always re-export domain Rx objects:
+
+```typescript
+import {
+  dataRx,
+  statsRx,
+  actionsRx,
+  MyRxRuntime
+} from "@adjoint/domain/engine/services/MyRxRuntime"
+
+// Clean re-exports for React components
+export { dataRx, statsRx, actionsRx, MyRxRuntime }
+```
+
+## Web-Specific UI State
+
+Create Rx state for UI-only concerns:
+
+```typescript
+import { Rx } from "@effect-rx/rx"
+
+// UI state that doesn't belong in domain
+export const selectedItemIdRx = Rx.state<string | null>(null)
+export const isLoadingRx = Rx.state<boolean>(false)
+export const uiModeRx = Rx.state<"grid" | "list">("grid")
+export const sidebarOpenRx = Rx.state<boolean>(false)
+```
+
+## Derived Reactive Values
+
+Combine domain and UI state:
+
+```typescript
+export const selectedItemRx = Rx.make(
+  Effect.gen(function* () {
+    const items = yield* Result.match(itemsRx.get(), {
+      onSuccess: (items) => Effect.succeed(items),
+      onFailure: () => Effect.succeed([])
+    })
+    const selectedId = yield* selectedItemIdRx.get()
+
+    if (!selectedId) return null
+    return items.find((item) => item.id === selectedId) ?? null
+  })
+)
+```
+
+## Local Storage Integration
+
+For persistent UI state:
+
+```typescript
+import { BrowserKeyValueStore } from "@effect/platform-browser"
+import { Schema } from "effect"
+
+export const userPreferencesRx = Rx.kvs({
+  runtime: Rx.runtime(BrowserKeyValueStore.layerLocalStorage),
+  key: "user-preferences",
+  schema: Schema.Struct({
+    theme: Schema.Literal("light", "dark"),
+    sidebarWidth: Schema.Number
+  }),
+  defaultValue: () => ({
+    theme: "light" as const,
+    sidebarWidth: 300
+  })
+})
+```
+
+## URL State Integration
+
+For URL synchronization:
+
+```typescript
+export const currentPageRx = Rx.searchParam("page", {
+  schema: Schema.NumberFromString
+})
+
+export const filterRx = Rx.searchParam("filter")
+```
+
+## Service Organization
+
+Structure services by feature:
+
+```typescript
+// WorkspaceRx.ts - workspace-related reactive values
+export { currentGraphRx, workspaceStatsRx, workspaceActionsRx }
+
+// UIStateRx.ts - general UI state
+export { selectedNodeIdRx, isProcessingRx, sidebarOpenRx }
+
+// UserRx.ts - user-related state
+export { userPreferencesRx, authStateRx }
+```
+
+## Required Imports
+
+```typescript
+import { Rx } from "@effect-rx/rx"
+import { Effect, Result, Schema } from "effect"
+
+// Domain Rx objects
+import { domainRx } from "@adjoint/domain/engine/services/DomainRxRuntime"
+```
+
+## Forbidden Patterns
+
+- ❌ No React imports (this is not component code)
+- ❌ No direct Effect service usage
+- ❌ No business logic (domain concerns)
+- ❌ No DOM manipulation
+- ❌ Don't create new Effect runtimes (use domain ones)
+
+## Export Organization
+
+Group exports logically:
+
+```typescript
+// Domain reactive values
+export { dataRx, statsRx, eventsRx }
+
+// Domain actions
+export { actionsRx }
+
+// UI state
+export { selectedIdRx, uiModeRx, isProcessingRx }
+
+// Derived values
+export { selectedItemRx, filteredItemsRx }
+```

@@ -1,0 +1,215 @@
+---
+globs: **/*.ts,**/*.tsx
+description: Effect TypeScript patterns and best practices
+---
+
+# Effect TypeScript Patterns
+
+## Generator Function Syntax
+
+Always use proper generator syntax with Effect:
+
+### ✅ Correct
+
+```typescript
+Effect.gen(function* () {
+  const service = yield* MyService
+  const result = yield* service.operation(params)
+  return result
+})
+```
+
+### ❌ Incorrect
+
+```typescript
+Effect.gen(function*() {  // Missing space before ()
+Effect.gen(function* {   // Missing ()
+Effect.gen((function* () => {  // Don't use arrow functions
+```
+
+## Import Organization
+
+Group Effect imports logically:
+
+```typescript
+// Core Effect types first
+import { Effect, Stream, Layer, Context } from "effect"
+
+// Platform-specific second
+import { BrowserHttpClient } from "@effect/platform-browser"
+
+// Local imports last
+import { MyService } from "./MyService.js"
+```
+
+## Type Annotations
+
+Be explicit with Effect types:
+
+```typescript
+// ✅ Good - explicit types
+const operation: Effect.Effect<Result, MyError, MyService> = Effect.gen(
+  function* () {
+    // implementation
+  }
+)
+
+// ✅ Good - inferred when obvious
+const simple = Effect.succeed(42)
+
+// ❌ Avoid - overly complex inference
+const complex = pipe(
+  data,
+  Effect.flatMap(processData),
+  Effect.catchAll(handleError)
+) // Add explicit type annotation
+```
+
+## Error Handling Patterns
+
+### Branded Errors
+
+```typescript
+export class MyError extends Data.TaggedError("MyError")<{
+  readonly message: string
+  readonly code: number
+}> {}
+
+// Usage
+return (
+  yield * Effect.fail(new MyError({ message: "Operation failed", code: 500 }))
+)
+```
+
+### Result Pattern
+
+```typescript
+import { Result } from "effect"
+
+// In effect-rx integration
+const resultRx: Rx.Rx<Result.Result<Data, MyError>>
+
+// In React components
+Result.match(result, {
+  onSuccess: (data) => handleSuccess(data),
+  onFailure: (error) => handleError(error)
+})
+```
+
+## Service Definition Pattern
+
+```typescript
+export class MyService extends Context.Tag("MyService")<
+  MyService,
+  {
+    readonly getData: Effect.Effect<Data[], MyError, never>
+    readonly updateData: (data: Data) => Effect.Effect<void, MyError, never>
+    readonly dataStream: Stream.Stream<Data, MyError, never>
+  }
+>() {}
+
+// Implementation
+export const MyServiceLive = Layer.effect(
+  MyService,
+  Effect.gen(function* () {
+    // setup
+    return MyService.of({
+      getData: Effect.succeed([]),
+      updateData: (data) => Effect.void,
+      dataStream: Stream.empty
+    })
+  })
+)
+```
+
+## Pipe vs Chain Style
+
+Prefer data-first (pipe) style:
+
+```typescript
+// ✅ Preferred - data-first with pipe
+const result = pipe(
+  Effect.succeed(data),
+  Effect.flatMap(processData),
+  Effect.catchAll(handleError),
+  Effect.tap(Effect.logInfo)
+)
+
+// ✅ Also good - when chaining is clearer
+const result = Effect.succeed(data).pipe(
+  Effect.flatMap(processData),
+  Effect.catchAll(handleError)
+)
+```
+
+## Schema Integration
+
+```typescript
+import { Schema } from "effect"
+
+// Define schemas for data validation
+const UserSchema = Schema.Struct({
+  id: Schema.String.pipe(Schema.brand("UserId")),
+  name: Schema.String,
+  email: Schema.String.pipe(Schema.format("email"))
+})
+
+type User = Schema.Schema.Type<typeof UserSchema>
+
+// Use in services
+const validateUser = (input: unknown): Effect.Effect<User, ValidationError> =>
+  Schema.decodeUnknown(UserSchema)(input).pipe(
+    Effect.mapError((error) => new ValidationError({ error }))
+  )
+```
+
+## File Extensions
+
+Always use `.js` extensions in imports (TypeScript + Node.js ESM):
+
+```typescript
+// ✅ Correct
+import { MyService } from "./MyService.js"
+import { utils } from "../utils/index.js"
+
+// ❌ Wrong
+import { MyService } from "./MyService"
+import { utils } from "../utils"
+```
+
+## Naming Conventions
+
+- **Services**: PascalCase ending in "Service" (`WorkspaceStateService`)
+- **Rx objects**: camelCase ending in "Rx" (`currentGraphRx`)
+- **Action objects**: camelCase ending in "ActionsRx" (`workspaceActionsRx`)
+- **Layers**: PascalCase ending in "Live" (`WorkspaceStateServiceLive`)
+- **Errors**: PascalCase ending in "Error" (`ValidationError`)
+
+## Comment Style
+
+Use JSDoc for public APIs:
+
+```typescript
+/**
+ * Processes workspace data and updates the graph
+ * @param graph - The current graph state
+ * @param operation - The operation type identifier
+ * @returns Effect that updates the workspace
+ */
+export const processWorkspace = (
+  graph: Graph,
+  operation: string
+): Effect.Effect<void, WorkspaceError, WorkspaceService> =>
+```
+
+## Testing Patterns
+
+```typescript
+import { Effect, TestContext } from "effect"
+
+// Use TestContext for deterministic testing
+const testEffect = Effect.gen(function* () {
+  const result = yield* myOperation
+  // assertions
+}).pipe(Effect.provide(TestContext.TestContext))
+```

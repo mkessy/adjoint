@@ -1,0 +1,120 @@
+---
+globs: packages/domain/src/engine/**/*.ts
+description: Effect-RX integration patterns for bridging domain services to UI
+---
+
+# Integration Layer Effect-RX Patterns
+
+## Architecture Purpose
+
+This layer bridges pure Effect domain services to reactive UI patterns using effect-rx.
+
+## Core Patterns
+
+### Rx Runtime Creation
+
+Always create the main runtime from domain service layers:
+
+```typescript
+import { Rx } from "@effect-rx/rx"
+import { MyServiceLive } from "../services/MyService.js"
+
+export const MyRxRuntime = Rx.runtime(MyServiceLive)
+```
+
+### Converting Effect to Rx
+
+Use `runtime.rx()` for Effect values:
+
+```typescript
+export const myDataRx = MyRxRuntime.rx(
+  Effect.gen(function* () {
+    const service = yield* MyService
+    return yield* service.getData
+  })
+)
+```
+
+### Converting Stream to Rx
+
+Use `Rx.make()` for Stream values:
+
+```typescript
+export const myStreamRx = Rx.make(
+  Effect.gen(function* () {
+    const service = yield* MyService
+    return service.dataStream
+  })
+)
+```
+
+### Action Functions
+
+Use `runtime.fn()` for operations that modify state:
+
+```typescript
+export const myActionsRx = {
+  updateData: MyRxRuntime.fn(
+    Effect.fnUntraced(function* (newData: Data) {
+      const service = yield* MyService
+      yield* service.updateData(newData)
+    })
+  ),
+
+  deleteData: MyRxRuntime.fn(
+    Effect.fnUntraced(function* (id: string) {
+      const service = yield* MyService
+      yield* service.deleteData(id)
+    })
+  )
+}
+```
+
+### Derived Reactive Values
+
+Combine multiple Rx sources:
+
+```typescript
+export const derivedRx = Rx.make(
+  Effect.gen(function* () {
+    const data1 = yield* firstRx.get()
+    const data2 = yield* secondRx.get()
+    return combineData(data1, data2)
+  })
+)
+```
+
+## Type Patterns
+
+Always specify proper Result types:
+
+```typescript
+export const myRx: Rx.Rx<Result.Result<MyData, MyError>>
+```
+
+## Required Imports
+
+```typescript
+import { Rx } from "@effect-rx/rx"
+import { Effect, Result } from "effect"
+```
+
+## Forbidden Patterns
+
+- ❌ No React imports (this is not the UI layer)
+- ❌ No direct DOM manipulation
+- ❌ No component-specific logic
+- ❌ Don't return Promises (return Rx objects)
+- ❌ Don't use `useRx` hooks (that's for React layer)
+
+## Export Patterns
+
+Always export both the runtime and individual Rx objects:
+
+```typescript
+// Export the runtime for advanced usage
+export { MyRxRuntime }
+
+// Export individual reactive values
+export { myDataRx, myStreamRx, myActionsRx }
+```

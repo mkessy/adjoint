@@ -1,0 +1,148 @@
+---
+globs: packages/web/src/**/*.tsx,packages/web/src/**/*.ts
+description: React effect-rx patterns for UI components
+---
+
+# Web Layer React Effect-RX Patterns
+
+## Architecture Purpose
+
+React components using effect-rx hooks for reactive UI updates. No direct Effect usage - consume Rx objects from integration layer.
+
+## Required Hook Patterns
+
+### Reading Reactive Values
+
+```typescript
+import { useRxSuspenseSuccess, useRx } from "@effect-rx/rx-react"
+
+// For domain data (with suspense)
+const data = useRxSuspenseSuccess(dataRx)
+
+// For UI state (immediate)
+const [uiState, setUiState] = useRx(uiStateRx)
+```
+
+### Action Functions
+
+```typescript
+import { useRxSetPromise } from "@effect-rx/rx-react"
+
+const performAction = useRxSetPromise(actionRx)
+
+const handleClick = async () => {
+  const result = await performAction(params)
+  Result.match(result, {
+    onSuccess: (value) => console.log("Success:", value),
+    onFailure: (error) => console.error("Error:", error)
+  })
+}
+```
+
+### Component Structure
+
+```typescript
+import React, { Suspense } from "react"
+import { useRxSuspenseSuccess } from "@effect-rx/rx-react"
+
+export const MyComponent: React.FC = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <MyContent />
+    </Suspense>
+  )
+}
+
+const MyContent: React.FC = () => {
+  // Reactive values from integration layer
+  const data = useRxSuspenseSuccess(dataRx)
+  const stats = useRxSuspenseSuccess(statsRx)
+
+  // Local UI state only
+  const [selectedId, setSelectedId] = React.useState<string | null>(null)
+
+  return <div>{/* component JSX */}</div>
+}
+```
+
+## Import Patterns
+
+```typescript
+// effect-rx React hooks
+import {
+  useRx,
+  useRxSuspenseSuccess,
+  useRxSetPromise
+} from "@effect-rx/rx-react"
+
+// Domain Rx objects (never direct Effect)
+import { dataRx, actionsRx } from "../services/MyRx.js"
+
+// Effect types for Result handling only
+import { Result } from "effect"
+```
+
+## State Management Rules
+
+### Domain State
+
+- ✅ Use reactive values from integration layer
+- ✅ Subscribe with effect-rx hooks
+- ❌ Never manipulate domain state directly
+
+### UI State
+
+- ✅ Use React useState for component-local state
+- ✅ Use Rx.state() for shared UI state
+- ✅ Keep UI concerns separate from business logic
+
+### Derived State
+
+```typescript
+// Compute derived values in render
+const selectedItem = React.useMemo(
+  () => items.value.find((item) => item.id === selectedId),
+  [items.value, selectedId]
+)
+```
+
+## Error Handling
+
+Always handle Results from actions:
+
+```typescript
+const handleAction = async () => {
+  const result = await performAction(data)
+
+  Result.match(result, {
+    onSuccess: (value) => {
+      // Handle success
+      setMessage("Operation successful")
+    },
+    onFailure: (error) => {
+      // Handle error
+      setError(error.message)
+    }
+  })
+}
+```
+
+## Forbidden Patterns
+
+- ❌ No direct Effect usage (`Effect.gen`, `Effect.runPromise`)
+- ❌ No Stream subscriptions (use Rx objects)
+- ❌ No domain service imports
+- ❌ No business logic in components
+- ❌ No Promise-based state management
+
+## Service Integration
+
+Import from service layer, not domain:
+
+```typescript
+// ✅ Correct
+import { workspaceRx, workspaceActionsRx } from "../services/WorkspaceRx.js"
+
+// ❌ Wrong - don't import domain directly
+import { WorkspaceStateService } from "@adjoint/domain"
+```

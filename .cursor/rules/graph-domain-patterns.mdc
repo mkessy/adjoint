@@ -1,0 +1,279 @@
+---
+globs: packages/domain/src/graph/**/*.ts,packages/domain/test/graph/**/*.ts
+description: Graph domain modeling patterns and best practices
+---
+
+# Graph Domain Patterns
+
+## Node Type System
+
+Use tagged unions with Schema for type safety:
+
+### Node Definition Pattern
+
+```typescript
+export class MyNode extends Schema.TaggedClass<MyNode>()("MyNode", {
+  ...BaseNodeFields,
+  specificField: Schema.String,
+  metadata: Schema.Record(Schema.String, Schema.Unknown)
+}) {}
+```
+
+### Node Union Pattern
+
+```typescript
+export const GraphNode = Schema.Union(
+  CanonicalEntityNode,
+  IdentityNode,
+  SourceDataNode,
+  SchemaNode,
+  StrategyNode
+).pipe(
+  Schema.annotations({
+    identifier: "GraphNode",
+    title: "Graph Node",
+    description: "A union of all possible node types"
+  })
+)
+
+export type AnyNode = Schema.Schema.Type<typeof GraphNode>
+```
+
+## Node Factory Pattern
+
+Use Effect generators for node creation:
+
+```typescript
+export const createMyNode = (props: {
+  readonly id: NodeId
+  readonly data: unknown
+  readonly lastSeenBy: NodeId
+}): Effect.Effect<MyNode, NodeCreationError> =>
+  Effect.gen(function* () {
+    const createdAt = yield* DateTime.now
+
+    try {
+      return new MyNode({
+        ...props,
+        createdAt
+      })
+    } catch (error) {
+      return yield* Effect.fail(
+        new NodeCreationError({
+          message: `Failed to create MyNode: ${error}`,
+          tag: "MyNode"
+        })
+      )
+    }
+  }).pipe(
+    Effect.tap((node) =>
+      Effect.logInfo("MyNode created").pipe(
+        Effect.annotateLogs({
+          nodeId: node.id,
+          nodeType: node._tag
+        })
+      )
+    )
+  )
+```
+
+## Graph Operations Pattern
+
+Use dual APIs (data-first and data-last):
+
+```typescript
+export const addNode: {
+  (node: AnyNode): (self: Graph) => Graph
+  (self: Graph, node: AnyNode): Graph
+} = dual(
+  2,
+  (self: Graph, node: AnyNode): Graph =>
+    new Graph({
+      id: self.id,
+      nodes: HashMap.set(self.nodes, node.id, node),
+      edges: self.edges
+    })
+)
+
+// Usage patterns
+const graph1 = addNode(newNode)(existingGraph) // data-last
+const graph2 = addNode(existingGraph, newNode) // data-first
+```
+
+## Graph Traversal Pattern
+
+Use Effect for async operations:
+
+```typescript
+export const traverseNodes = <A, E, R>(
+  self: Graph,
+  f: (node: AnyNode) => Effect.Effect<A, E, R>
+): Effect.Effect<Array<A>, E, R> =>
+  Effect.all(Array.from(HashMap.values(self.nodes)).map(f), {
+    concurrency: "unbounded"
+  })
+```
+
+## Pattern Matching
+
+Use Effect's Match module:
+
+```typescript
+export const matchNode = <R>(node: AnyNode) =>
+  Match.value(node).pipe(
+    Match.tag("CanonicalEntityNode", (entity): R => entity as R),
+    Match.tag("IdentityNode", (identity): R => identity as R),
+    Match.tag("SourceDataNode", (source): R => source as R),
+    Match.tag("SchemaNode", (schema): R => schema as R),
+    Match.tag("StrategyNode", (strategy): R => strategy as R),
+    Match.exhaustive
+  )
+```
+
+## Edge Modeling
+
+Use tagged unions for edge types:
+
+```typescript
+export type Edge = Data.TaggedEnum<{
+  HAS_CHILD: {
+    from: NodeId
+    to: NodeId
+  }
+  CONFORMS_TO_SCHEMA: {
+    from: NodeId
+    to: NodeId
+    schemaId: string
+  }
+  INPUT_TO: {
+    from: NodeId
+    to: NodeId
+    port: string
+  }
+}>
+
+export const Edge = Data.taggedEnum<Edge>()
+```
+
+## Graph Validation
+
+Create validation pipelines:
+
+```typescript
+export const validateGraph = (
+  graph: Graph
+): Effect.Effect<Graph, ValidationError[]> =>
+  Effect.gen(function* () {
+    const nodeValidations = yield* Effect.all(
+      Array.from(HashMap.values(graph.nodes)).map(validateNode),
+      { concurrency: "unbounded" }
+    )
+
+    const edgeValidations = yield* Effect.all(
+      Chunk.toArray(graph.edges).map((edge) => validateEdge(graph, edge)),
+      { concurrency: "unbounded" }
+    )
+
+    const errors = [...nodeValidations, ...edgeValidations].filter(Boolean)
+
+    if (errors.length > 0) {
+      return yield* Effect.fail(errors)
+    }
+
+    return graph
+  })
+```
+
+## Graph Composition
+
+Use algebraic composition patterns:
+
+```typescript
+export class Composition<A, B> extends Data.TaggedClass("Composition")<{
+  readonly source: Graph
+  readonly target: Graph
+  readonly mapping: Map<NodeId, NodeId>
+  readonly transform: (input: A) => Effect.Effect<B, CompositionError>
+}> {}
+
+export const compose = <A, B, C>(
+  first: Composition<A, B>,
+  second: Composition<B, C>
+): Effect.Effect<Composition<A, C>, CompositionError> =>
+  Effect.gen(function* () {
+    // Composition logic
+    return new Composition({
+      source: first.source,
+      target: second.target,
+      mapping: combineMappings(first.mapping, second.mapping),
+      transform: (input: A) =>
+        Effect.gen(function* () {
+          const intermediate = yield* first.transform(input)
+          return yield* second.transform(intermediate)
+        })
+    })
+  })
+```
+
+## Immutability Patterns
+
+Always create new instances:
+
+```typescript
+// ✅ Correct - immutable updates
+const updateNode = (
+  graph: Graph,
+  nodeId: NodeId,
+  updater: (node: AnyNode) => AnyNode
+): Effect.Effect<Graph, NodeNotFoundError> =>
+  Effect.gen(function* () {
+    const node = HashMap.get(graph.nodes, nodeId)
+    if (Option.isNone(node)) {
+      return yield* Effect.fail(new NodeNotFoundError({ nodeId }))
+    }
+
+    const updatedNode = updater(node.value)
+    return new Graph({
+      ...graph,
+      nodes: HashMap.set(graph.nodes, nodeId, updatedNode)
+    })
+  })
+
+// ❌ Wrong - mutation
+const badUpdate = (graph: Graph, node: AnyNode) => {
+  ;(graph.nodes as any).set(node.id, node) // Don't mutate!
+  return graph
+}
+```
+
+## Testing Patterns
+
+Use property-based testing for graph operations:
+
+```typescript
+import { FastCheck } from "effect"
+
+const nodeArbitrary = FastCheck.gen(function* () {
+  const id = yield* FastCheck.string()
+  const nodeType = yield* FastCheck.constantFrom(
+    "CanonicalEntityNode",
+    "IdentityNode"
+  )
+  return createNodeOfType(nodeType, id)
+})
+
+const graphArbitrary = FastCheck.array(nodeArbitrary).map((nodes) =>
+  Graph.fromNodes(nodes)
+)
+
+// Property: adding then removing a node should be identity
+const addRemoveProperty = FastCheck.property(
+  graphArbitrary,
+  nodeArbitrary,
+  (graph, node) => {
+    const withNode = Graph.addNode(node)(graph)
+    const withoutNode = Graph.removeNode(node.id)(withNode)
+    return Graph.equals(graph, withoutNode)
+  }
+)
+```

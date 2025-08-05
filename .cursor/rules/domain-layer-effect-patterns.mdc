@@ -1,0 +1,85 @@
+---
+globs: packages/domain/src/**/*.ts
+description: Effect patterns for domain layer services
+---
+
+# Domain Layer Effect Patterns
+
+## Architecture Principles
+
+- **Pure Effect Services**: Domain services should only use Effect, Stream, and core Effect types
+- **No UI Dependencies**: Domain layer must never import React, effect-rx, or web-specific modules
+- **Business Logic Focus**: Contains graph operations, state management, validation, and core business rules
+- **Service Pattern**: Use `Context.Tag` and `Layer` for dependency injection
+
+## Required Patterns
+
+### Service Definition
+
+```typescript
+export class MyService extends Context.Tag("MyService")<
+  MyService,
+  {
+    readonly operation: Effect.Effect<Result, Error, Requirements>
+    readonly stream: Stream.Stream<Data, Error, Requirements>
+  }
+>() {}
+```
+
+### Effect Generator Functions
+
+Always use proper generator syntax:
+
+```typescript
+Effect.gen(function* () {
+  const service = yield* MyService
+  const result = yield* service.operation
+  return result
+})
+```
+
+### Error Handling
+
+Use branded error types from [error.ts](mdc:packages/domain/src/error.ts):
+
+```typescript
+return (
+  yield *
+  Effect.fail(
+    new ValidationError({
+      message: "Validation failed",
+      details: errorDetails
+    })
+  )
+)
+```
+
+### Layer Creation
+
+```typescript
+export const MyServiceLive = Layer.effect(
+  MyService,
+  Effect.gen(function* () {
+    // Service implementation
+    return MyService.of({
+      operation: implementOperation,
+      stream: implementStream
+    })
+  })
+)
+```
+
+## Forbidden Patterns
+
+- ❌ No React imports (`import React`, `useEffect`, etc.)
+- ❌ No effect-rx imports (`@effect-rx/rx`, `Rx.make`, etc.)
+- ❌ No Promise-based APIs (use Effect instead)
+- ❌ No direct state mutation (use Ref, SubscriptionRef)
+- ❌ No browser-specific APIs
+
+## File Organization
+
+- Services in `services/` subdirectories
+- Types in `types/` subdirectories
+- Shared utilities in module root
+- Tests co-located with implementation
