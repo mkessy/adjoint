@@ -3,3 +3,4 @@
  */
 
 export * from "./useService.js"
+export * from "./useWorkspace.js"

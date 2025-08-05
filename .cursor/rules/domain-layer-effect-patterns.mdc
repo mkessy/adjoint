@@ -69,6 +69,88 @@ export const MyServiceLive = Layer.effect(
 )
 ```
 
+### Advanced Service with Caching
+
+```typescript
+export class DataService extends Context.Tag("DataService")<
+  DataService,
+  {
+    readonly getData: (id: string) => Effect.Effect<Data, DataError>
+    readonly searchData: (query: string) => Stream.Stream<Data>
+    readonly eventStream: Stream.Stream<Event>
+  }
+>() {
+  static Live = Layer.effect(
+    this,
+    Effect.gen(function* () {
+      const client = yield* HttpClient.HttpClient
+
+      // Create cache with sophisticated TTL logic
+      const dataCache = yield* Cache.makeWith({
+        lookup: (id: string) =>
+          client
+            .get(`/api/data/${id}`)
+            .pipe(
+              Effect.flatMap(DataSchema.decodeResponse),
+              Effect.orDie,
+              Effect.withSpan("DataService.getData", { attributes: { id } })
+            ),
+        timeToLive: (exit) => {
+          if (exit._tag === "Failure") return "1 minute"
+          return exit.value.length > 0 ? "1 hour" : "5 minutes"
+        },
+        capacity: 1024
+      })
+
+      // Search with stream processing
+      const searchData = (query: string) =>
+        client.get("/api/search", { urlParams: { q: query } }).pipe(
+          Effect.flatMap(SearchResultSchema.decodeResponse),
+          Stream.fromIterableEffect,
+          Stream.take(100),
+          Stream.flatMap((result) => processSearchResult(result), {
+            concurrency: "unbounded"
+          }),
+          Stream.catchCause((cause) =>
+            Effect.logDebug(cause).pipe(Stream.fromEffect, Stream.drain)
+          )
+        )
+
+      return {
+        getData: (id: string) => Cache.get(dataCache, id),
+        searchData,
+        eventStream: createEventStream()
+      } as const
+    })
+  )
+}
+```
+
+### Stream Processing Patterns
+
+```typescript
+export const processDataStream = (input: Stream.Stream<Data>) =>
+  input.pipe(
+    Stream.filter((item) => item.isValid),
+    Stream.map((item) => transformItem(item)),
+    Stream.grouped(10), // Process in batches
+    Stream.mapEffect((batch) => processBatch(batch), { concurrency: 5 }),
+    Stream.catchAll((error) => Stream.fromEffect(Effect.logError(error)))
+  )
+
+export const paginatedStream = <T>(
+  fetcher: (page: number) => Effect.Effect<T[]>
+) =>
+  Stream.paginateArrayEffect(1, (page) =>
+    fetcher(page).pipe(
+      Effect.map((items) => [
+        items,
+        items.length > 0 ? Option.some(page + 1) : Option.none()
+      ])
+    )
+  )
+```
+
 ## Forbidden Patterns
 
 - ❌ No React imports (`import React`, `useEffect`, etc.)

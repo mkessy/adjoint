@@ -1,5 +1,4 @@
 import type * as Graph from "@adjoint/domain/graph/graph"
-import {WorkSpace}
 import { Chunk, Context, Effect, Layer, Option, Stream } from "effect"
 import type { GraphSnapshot } from "./types.js"
 

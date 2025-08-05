@@ -1,16 +1,15 @@
 import "./styles/index.css"
+import { ContentRoot } from "./components/layout/index.js"
 import { AppRuntime } from "./services/AppRuntime.js"
 
 /**
  * Main application component
- * Implements the Observable-style interface with NLP search focus
+ * Observable-inspired single-column layout with focused data visualization
  */
 function App() {
   return (
     <AppRuntime.Provider>
-      <div className="app">
-        <h1>Hello, world!</h1>
-      </div>
+      <ContentRoot />
     </AppRuntime.Provider>
   )
 }

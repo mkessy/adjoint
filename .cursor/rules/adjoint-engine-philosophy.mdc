@@ -1,0 +1,52 @@
+description: "Core philosophy and architecture of the Adjoint Engine, a verifiable knowledge synthesis system built on Effect, algebraic principles, and structural recursion."
+alwaysApply: true
+
+# Core Principles: The Adjoint Engine
+
+## 1. Philosophical Goal: A Verifiable Knowledge Engine
+
+We are building a **scientific instrument for knowledge synthesis**, not a typical data pipeline or dashboard. The user experience should feel like an act of discovery and verification, akin to a researcher exploring data in a lab. The core user interaction is a **search** for a computational path within a universe of possible transformations.
+
+- **DO:** Emphasize clarity, minimalism, and the visualization of data and its structure (per Edward Tufte's principles).
+- **DO NOT:** Use metaphors or components associated with generic "enterprise dashboards" (e.g., gauges, cartoonish icons, complex forms).
+
+---
+
+## 2. The Algebraic Foundation: A Graph of Everything
+
+The entire system is modeled as a single, immutable **`CanonicalGraph`**—an algebraic property graph.
+
+- **Nodes are Pure Data:** All nodes (`SourceDataNode`, `CanonicalEntityNode`, `AlgebraNode`, etc.) are defined in `packages/domain/src/graph/node.ts` as immutable `Data.TaggedClass` objects using `Effect/Schema`. They contain descriptions, not live resources or methods.
+- **Schemas are First-Class Citizens:** `SchemaNode`s are nodes within the graph, making the types themselves part of the queryable structure.
+- **Computation is also Data:** `AlgebraNode`s and `SemanticFunctorNode`s represent transformations. They are also pure `Data` nodes, describing the logic and dependencies of a computation.
+
+---
+
+## 3. The Computational Model: Structural Recursion
+
+All processing is a form of **structural recursion**. We do not perform arbitrary operations on nodes; we execute mathematically sound folds over the graph's dependency structure.
+
+- **The Core Operation is a Catamorphism (Fold):** The engine's primary function is a `graphCatamorphism`. This is a lazy, on-demand, and memoized recursion. It ensures that to compute a result for any node, the results for all its dependencies ("the subgraph below") must be computed first. Data always flows "up" from the leaves of the dependency tree.
+- **No Explicit Topological Sort is Needed at the API Level:** The on-demand recursive nature of the engine *is* the topological sort. This guarantees that the graph's structure is always respected.
+- **Provenance is Paramount:** Every transformation creates new nodes and **provenance edges** (`INPUT_TO`, `PRODUCES`), adding to the graph without mutation. The full history is always preserved and queryable.
+
+---
+
+## 4. Why `Effect` is Integral
+
+The `Effect` ecosystem is not just a utility library; it is the **foundation that makes this architecture possible.**
+
+- **`Effect<A, E, R>`:** The perfect data type for describing lazy, effectful, and dependency-requiring computations. All node capabilities are expressed as functions that return an `Effect`.
+- **`Layer` and `Context.Tag`:** This is how we manage dependencies and achieve polymorphism. Node capabilities (like `Loadable` or `Semigroup`) are defined as services. `Layer`s provide the concrete implementations for these services, cleanly separating pure data from stateful or effectful logic (like database connections or an NLP model).
+- **`Stream`:** This is the backbone of all data flow. `Loadable` nodes produce `Stream`s, and `AlgebraNode`s consume and transform them. This provides backpressure and resource safety for free.
+- **`Schema`:** This is our runtime enforcement of algebraic types. `Schema.decode` is used at the boundary of every transformation to guarantee data integrity, which is essential for preserving the algebraic laws of the system.
+
+---
+
+## 5. The UI (`effect-rx`) is a Verifiable, Interactive Proof
+
+The UI's purpose is to make the algebraic guarantees of the engine tangible and interactive.
+
+- **The `WorkspaceStateService` is the Source of Truth:** This central service holds the history of `Graph` snapshots.
+- **`effect-rx` is the Bridge:** We use `effect-rx` to create a reactive link between the `Effect` services and the React UI. Components subscribe to reactive values (Rx) that are derived from the `WorkspaceStateService`.
+- **Visualize the Proof:** The UI must feature components that visualize the underlying mathematics. The **Commutative Square** is the most important of these. It's not just a diagram; it's an interactive component that demonstrates the validity of a transformation (`AlgebraNode`) on a sample of data, providing a visual proof that the operation is sound before the user commits to a full materialization.---

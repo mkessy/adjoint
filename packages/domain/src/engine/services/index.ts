@@ -4,7 +4,7 @@
  * Central export point for all engine services
  */
 
-export * from "./GraphWorkspaceRuntime.js"
+export * from "./GraphWorkspaceRxRuntime.js"
 export * from "./WorkspaceStateHelpers.js"
 export * from "./WorkspaceStateService.js"
 
