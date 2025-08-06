@@ -345,7 +345,7 @@ describe("Property-Based Tests", () => {
     })
 
     it("sort is deterministic", () => {
-      const ordering: Node.NodeOrdering<Node.AnyNode> = {
+      const ordering: Node.NodeOrdering<Node.IdentityNode> = {
         _id: Symbol.for("id-ordering"),
         compare: (self, that) => {
           if (self.id < that.id) return -1
