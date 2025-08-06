@@ -2,6 +2,7 @@ import { useRxSet, useRxValue } from "@effect-rx/rx-react"
 import React from "react"
 import { graphDataSectionsRx, setFocusedLevelRx } from "../../services/LayoutRx.js"
 import { focusedLevelRx } from "../../services/WorkspaceRx.js"
+import { NlpView } from "../NlpView.js"
 import { DataSection } from "./DataSection.js"
 
 /**
@@ -21,6 +22,7 @@ export const ContentBody: React.FC = () => {
 
   return (
     <>
+      <NlpView />
       {dataSections.map((section) => (
         <DataSection
           key={section.id}

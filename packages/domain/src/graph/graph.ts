@@ -165,18 +165,18 @@ const getChildren = (self: Graph, parentId: NodeId): Chunk.Chunk<AnyNode> => {
   const childEdges = Chunk.filter(self.edges, (edge) =>
     Edge.Edge.$match(edge, {
       HAS_CHILD: ({ from }) => from === parentId,
+      PRODUCES: ({ from }) => from === parentId, // Include PRODUCES edges
       CONFORMS_TO_SCHEMA: () => false,
-      INPUT_TO: () => false,
-      PRODUCES: () => false
+      INPUT_TO: () => false
     }))
 
   return Chunk.compact(
     Chunk.map(childEdges, (edge) =>
       Edge.Edge.$match(edge, {
         HAS_CHILD: ({ to }) => HashMap.get(self.nodes, to),
+        PRODUCES: ({ to }) => HashMap.get(self.nodes, to), // Get 'to' node for PRODUCES
         CONFORMS_TO_SCHEMA: () => Option.none<AnyNode>(),
-        INPUT_TO: () => Option.none<AnyNode>(),
-        PRODUCES: () => Option.none<AnyNode>()
+        INPUT_TO: () => Option.none<AnyNode>()
       }))
   )
 }

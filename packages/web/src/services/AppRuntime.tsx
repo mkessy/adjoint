@@ -1,6 +1,6 @@
 // packages/web/src/services/AppRuntime.tsx
 import { Engine } from "@adjoint/domain"
-import { BrowserHttpClient } from "@effect/platform-browser"
+import { BrowserHttpClient, BrowserWorker } from "@effect/platform-browser"
 import { Layer } from "effect"
 import { makeReactRuntime } from "./HttpRuntime.js"
 
@@ -15,8 +15,10 @@ export const graphWorkspaceRxRuntime = Engine.GraphWorkspaceRxRuntime
 const AppLayer = Layer.mergeAll(
   // Platform layers
   BrowserHttpClient.layerXMLHttpRequest,
+  BrowserWorker.layer(() => new Worker(new URL("../../domain/src/nlp/worker.ts", import.meta.url), { type: "module" })),
   // Our service layers - use the one from domain
   Engine.WorkspaceStateServiceLive
+  // Engine.WinkNlpServiceLive
 )
 
 // Create the runtime factory for our app

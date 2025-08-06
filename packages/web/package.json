@@ -23,7 +23,7 @@
         "@adjoint/domain": "workspace:^",
         "@adjoint/nlp-wink": "workspace:^",
         "@effect-rx/rx": "latest",
-        "@effect-rx/rx-react": "latest",
+        "@effect-rx/rx-react": "^0.42.4",
         "@effect/platform": "latest",
         "@effect/platform-browser": "latest",
         "@effect/sql": "latest",

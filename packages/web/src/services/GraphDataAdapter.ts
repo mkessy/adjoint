@@ -252,37 +252,33 @@ const getSampleSections = (): Array<DataSection> => [
  * Extract available transformations from the graph.
  * These are AlgebraNodes that can be applied at each level.
  */
-export const extractTransformations = (graph: Graph.Graph.Graph, level: number) => {
-  // Since AlgebraNode is not currently implemented, return default transformations
-  // This would be where we look for transformation nodes in the graph
-  const transformations = pipe(
-    graph.nodes,
-    HashMap.filterMap((_node, _key) => {
-      // Placeholder for when AlgebraNode is implemented
-      return Option.none()
-    }),
-    HashMap.values,
-    Array.fromIterable
-  )
-
-  // Return default transformations for now
-  return transformations.length > 0 ? transformations : getDefaultTransformations()[level] || []
-}
-
 /**
- * Get default transformations for development
+ * Extract available transformations from the graph.
+ * These are StrategyNodes that can be applied at each level.
  */
-const getDefaultTransformations = () => [
-  [{ from: "Document", to: "Sections", op: "split" }],
-  [{ from: "Sections", to: "Sentences", op: "tokenize" }],
-  [{ from: "Sentences", to: "Tokens", op: "parse" }],
-  [{ from: "Tokens", to: "Analysis", op: "analyze" }]
-]
+export const extractTransformations = (graph: Graph.Graph.Graph) => {
+  const transformations: Array<{ from: string; to: string; op: string }> = []
+
+  HashMap.forEach(graph.nodes, (node) => {
+    if (Graph.Node.isStrategyNode(node)) {
+      // For now, we'll use the strategy name as the operation and infer from/to
+      // In a more complete implementation, we'd parse input/output schemas
+      transformations.push({
+        from: `Input for ${node.name}`,
+        to: `Output for ${node.name}`,
+        op: node.name
+      })
+    }
+  })
+
+  // Filter transformations by level if needed, or return all
+  return transformations
+}
 
 /**
  * Extract schema information for a given level
  */
-export const extractSchemaInfo = (graph: Graph.Graph.Graph, level: number) => {
+export const extractSchemaInfo = (graph: Graph.Graph.Graph) => {
   // Look for SchemaNodes associated with this level
   const schemaNode = pipe(
     graph.nodes,
@@ -290,26 +286,17 @@ export const extractSchemaInfo = (graph: Graph.Graph.Graph, level: number) => {
       const matchedNode = Graph.Node.matchNode(node) as Graph.Node.AnyNode
       return matchedNode._tag === "SchemaNode"
     }),
-    Option.map(([_key, _node]) => {
-      // For now, return placeholder schema info
+    Option.map(([_key, node]) => {
+      // Return the schemaId and a string representation of the definition
       return {
-        type: `Level${level}`,
-        schema: "{ placeholder: string }"
+        type: node._tag,
+        schema: JSON.stringify(node.id) // Convert schema definition to string
       }
     })
   )
 
   return pipe(
     schemaNode,
-    Option.getOrElse(() => {
-      // Default schemas
-      const defaultSchemas = [
-        { type: "Document", schema: "{ title: string, content: string }" },
-        { type: "Section", schema: "{ text: string, index: number }" },
-        { type: "Sentence", schema: "Array<Token>" },
-        { type: "Token", schema: "{ text: string, pos: string }" }
-      ]
-      return defaultSchemas[level] || null
-    })
+    Option.getOrElse(() => null)
   )
 }

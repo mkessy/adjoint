@@ -1,6 +1,6 @@
 import { Result, Rx } from "@effect-rx/rx"
 import { type DataSection, extractDataSections, extractSchemaInfo, extractTransformations } from "./GraphDataAdapter.js"
-import { currentGraphRx, focusedLevelRx } from "./WorkspaceRx.js"
+import { currentGraphRx } from "./WorkspaceRx.js"
 
 /**
  * Layout-specific derived reactive values.
@@ -12,13 +12,12 @@ import { currentGraphRx, focusedLevelRx } from "./WorkspaceRx.js"
  * Derive schema information for the active section from the graph.
  */
 export const activeSchemaRx = Rx.make((get) => {
-  const focusedLevel = get(focusedLevelRx)
   const graphResult = get(currentGraphRx)
 
   return Result.match(graphResult, {
     onInitial: () => ({ type: "Document", schema: "{}" }),
-    onFailure: () => extractSchemaInfo({ nodes: [], edges: [] } as any, Number(focusedLevel)),
-    onSuccess: (graph) => extractSchemaInfo(graph.value, Number(focusedLevel))
+    onFailure: () => extractSchemaInfo({ nodes: [], edges: [] } as any),
+    onSuccess: (graph) => extractSchemaInfo(graph.value)
   })
 })
 
@@ -51,13 +50,12 @@ export const graphDataSectionsRx: Rx.Rx<Array<DataSection>> = Rx.make((get) => {
  * These represent the algebra operations that can be applied.
  */
 export const availableTransformsRx = Rx.make((get) => {
-  const focusedLevel = get(focusedLevelRx)
   const graphResult = get(currentGraphRx)
 
   return Result.match(graphResult, {
     onInitial: () => [],
-    onFailure: () => extractTransformations({ nodes: [], edges: [] } as any, Number(focusedLevel)),
-    onSuccess: (graph) => extractTransformations(graph.value, Number(focusedLevel))
+    onFailure: () => extractTransformations({ nodes: [], edges: [] } as any),
+    onSuccess: (graph) => extractTransformations(graph.value)
   })
 })
 

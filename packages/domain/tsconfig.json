@@ -1,6 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": [],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "node_modules/wink-distance/src/wink-distance.d.ts"
+  ],
   "references": [
     { "path": "tsconfig.src.json" },
     { "path": "tsconfig.test.json" }

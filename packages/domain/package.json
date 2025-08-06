@@ -35,7 +35,11 @@
     "@effect-rx/rx-react": "latest",
     "@effect/platform": "latest",
     "@effect/sql": "latest",
-    "effect": "latest"
+    "effect": "latest",
+    "wink-distance": "^2.0.2",
+    "wink-eng-lite-web-model": "^1.8.1",
+    "wink-nlp": "^2.4.0",
+    "wink-nlp-utils": "^2.1.0"
   },
   "effect": {
     "generateExports": {

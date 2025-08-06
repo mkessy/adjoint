@@ -102,7 +102,7 @@ describe("Property-Based Tests", () => {
           const filtered = graph.pipe(Graph.filter(predicate))
 
           // All nodes in filtered graph should satisfy predicate
-          return Array.from(HashMap.values(filtered.nodes)).every((node) => predicate.evaluate(node))
+          return HashMap.toValues(filtered.nodes).every((node) => predicate.evaluate(node))
         }),
         { numRuns: 100 }
       )

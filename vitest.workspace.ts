@@ -15,4 +15,11 @@ export default defineWorkspace([
   // project({ name: "my-package|browser", environment: "happy-dom" }),
   // Add the default configuration for all packages.
   "packages/*"
-])
+], {
+  resolve: {
+    alias: {
+      "@adjoint/domain": path.resolve(__dirname, "./packages/domain/src"),
+      "@adjoint/nlp-wink": path.resolve(__dirname, "./packages/nlp-wink/src")
+    }
+  }
+})

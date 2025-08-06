@@ -1,4 +1,4 @@
 /**
- * Configuration schema for the NlpService.
- * Allows for declarative and type-safe configuration.
+ * Minimal Wink utilities for distance calculations and BM25 vectorization
+ * This package only exports the specific utilities needed by @adjoint/domain
  */

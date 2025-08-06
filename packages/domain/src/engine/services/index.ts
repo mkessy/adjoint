@@ -5,6 +5,7 @@
  */
 
 export * from "./GraphWorkspaceRxRuntime.js"
+export * from "./NlpRxRuntime.js"
 export * from "./WorkspaceStateHelpers.js"
 export * from "./WorkspaceStateService.js"
 

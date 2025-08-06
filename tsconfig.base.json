@@ -43,6 +43,9 @@
       "@adjoint/domain": ["./packages/domain/src/index.js"],
       "@adjoint/domain/*": ["./packages/domain/src/*.js"],
       "@adjoint/domain/test/*": ["./packages/domain/test/*.js"],
+      "@adjoint/nlp-wink": ["./packages/nlp-wink/src/index.js"],
+      "@adjoint/nlp-wink/*": ["./packages/nlp-wink/src/*.js"],
+      "@adjoint/nlp-wink/test/*": ["./packages/nlp-wink/test/*.js"],
       "@adjoint/server": ["./packages/server/src/index.js"],
       "@adjoint/server/*": ["./packages/server/src/*.js"],
       "@adjoint/server/test/*": ["./packages/server/test/*.js"]
