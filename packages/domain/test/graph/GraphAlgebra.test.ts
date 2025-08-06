@@ -3,8 +3,6 @@ import { describe, expect, it } from "vitest"
 import * as Algebra from "../../src/graph/algebra.js"
 import * as Graph from "../../src/graph/graph.js"
 import * as Node from "../../src/graph/node/node.js"
-import type * as Capabilities from "../../src/node/capabilities.js"
-import * as Predicate from "../../src/node/predicate.js"
 
 describe("Graph Algebra", () => {
   // Test fixtures
@@ -53,7 +51,7 @@ describe("Graph Algebra", () => {
     })
 
     it("should count nodes matching predicate", async () => {
-      const identityPredicate: Capabilities.NodePredicate<Node.AnyNode> = {
+      const identityPredicate: Node.NodePredicate<Node.IdentityNode> = {
         _id: Symbol.for("is-identity"),
         evaluate: (node) => Node.isIdentityNode(node)
       }
@@ -70,7 +68,7 @@ describe("Graph Algebra", () => {
     })
 
     it("should return 0 when no nodes match predicate", async () => {
-      const canonicalPredicate: Capabilities.NodePredicate<Node.AnyNode> = {
+      const canonicalPredicate: Node.NodePredicate<Node.CanonicalEntityNode> = {
         _id: Symbol.for("is-canonical"),
         evaluate: (node) => Node.isCanonicalEntityNode(node)
       }
@@ -170,17 +168,17 @@ describe("Graph Algebra", () => {
 
     it("should be compositional", async () => {
       // count(p1 ∧ p2) ≤ min(count(p1), count(p2))
-      const identityPredicate: Capabilities.NodePredicate<Node.AnyNode> = {
+      const identityPredicate: Node.NodePredicate<Node.IdentityNode> = {
         _id: Symbol.for("is-identity"),
         evaluate: (node) => Node.isIdentityNode(node)
       }
 
-      const truePredicate: Capabilities.NodePredicate<Node.AnyNode> = {
+      const truePredicate: Node.NodePredicate<Node.IdentityNode> = {
         _id: Symbol.for("always-true"),
         evaluate: (_) => true
       }
 
-      const andPredicate = Predicate.and(identityPredicate)(truePredicate)
+      const andPredicate = Node.and(identityPredicate)(truePredicate)
 
       const graph = createTestGraph(3)
       const rootNode = createTestNode("root", "IdentityNode")
