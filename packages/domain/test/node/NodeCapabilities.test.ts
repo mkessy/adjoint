@@ -1,8 +1,6 @@
 import { describe, expect, it } from "@effect/vitest"
 import { DateTime, Effect } from "effect"
 import * as Node from "../../src/graph/node/node.js"
-import * as Capabilities from "../../src/node/capabilities.js"
-import * as Predicate from "../../src/node/predicate.js"
 
 describe("Node Capabilities", () => {
   // Test fixtures
@@ -24,12 +22,12 @@ describe("Node Capabilities", () => {
     })
 
   describe("NodePredicate", () => {
-    const identityPredicate: Capabilities.NodePredicate<Node.AnyNode> = {
+    const identityPredicate: Node.NodePredicate<Node.IdentityNode> = {
       _id: Symbol.for("is-identity"),
       evaluate: (node) => Node.isIdentityNode(node)
     }
 
-    const canonicalPredicate: Capabilities.NodePredicate<Node.AnyNode> = {
+    const canonicalPredicate: Node.NodePredicate<Node.CanonicalEntityNode> = {
       _id: Symbol.for("is-canonical"),
       evaluate: (node) => Node.isCanonicalEntityNode(node)
     }
@@ -39,8 +37,9 @@ describe("Node Capabilities", () => {
       const canonicalNode = createTestCanonicalNode("test-2")
 
       expect(identityPredicate.evaluate(identityNode)).toBe(true)
+      // @ts-expect-error - CanonicalEntityNode is not an IdentityNode
       expect(identityPredicate.evaluate(canonicalNode)).toBe(false)
-
+      // @ts-expect-error - IdentityNode is not a CanonicalEntityNode
       expect(canonicalPredicate.evaluate(identityNode)).toBe(false)
       expect(canonicalPredicate.evaluate(canonicalNode)).toBe(true)
     })
@@ -52,17 +51,17 @@ describe("Node Capabilities", () => {
   })
 
   describe("Predicate Combinators", () => {
-    const alwaysTrue: Capabilities.NodePredicate<Node.AnyNode> = {
+    const alwaysTrue: Node.NodePredicate<Node.IdentityNode> = {
       _id: Symbol.for("always-true"),
       evaluate: (_) => true
     }
 
-    const alwaysFalse: Capabilities.NodePredicate<Node.AnyNode> = {
+    const alwaysFalse: Node.NodePredicate<Node.IdentityNode> = {
       _id: Symbol.for("always-false"),
       evaluate: (_) => false
     }
 
-    const identityPredicate: Capabilities.NodePredicate<Node.AnyNode> = {
+    const identityPredicate: Node.NodePredicate<Node.IdentityNode> = {
       _id: Symbol.for("is-identity"),
       evaluate: (node) => Node.isIdentityNode(node)
     }
@@ -72,27 +71,27 @@ describe("Node Capabilities", () => {
         const testNode = createTestIdentityNode("test")
 
         // true AND true = true
-        const trueAndTrue = Predicate.and(alwaysTrue)(alwaysTrue)
+        const trueAndTrue = Node.and(alwaysTrue)(alwaysTrue)
         expect(trueAndTrue.evaluate(testNode)).toBe(true)
 
         // true AND false = false
-        const trueAndFalse = Predicate.and(alwaysTrue)(alwaysFalse)
+        const trueAndFalse = Node.and(alwaysTrue)(alwaysFalse)
         expect(trueAndFalse.evaluate(testNode)).toBe(false)
 
         // false AND true = false
-        const falseAndTrue = Predicate.and(alwaysFalse)(alwaysTrue)
+        const falseAndTrue = Node.and(alwaysFalse)(alwaysTrue)
         expect(falseAndTrue.evaluate(testNode)).toBe(false)
 
         // false AND false = false
-        const falseAndFalse = Predicate.and(alwaysFalse)(alwaysFalse)
+        const falseAndFalse = Node.and(alwaysFalse)(alwaysFalse)
         expect(falseAndFalse.evaluate(testNode)).toBe(false)
       })
 
       it("should be commutative: P ∧ Q ≡ Q ∧ P", () => {
         const testNode = createTestIdentityNode("test")
 
-        const pAndQ = Predicate.and(identityPredicate)(alwaysTrue)
-        const qAndP = Predicate.and(alwaysTrue)(identityPredicate)
+        const pAndQ = Node.and(identityPredicate)(alwaysTrue)
+        const qAndP = Node.and(alwaysTrue)(identityPredicate)
 
         expect(pAndQ.evaluate(testNode)).toBe(qAndP.evaluate(testNode))
       })
@@ -100,9 +99,9 @@ describe("Node Capabilities", () => {
       it("should be associative: (P ∧ Q) ∧ R ≡ P ∧ (Q ∧ R)", () => {
         const testNode = createTestIdentityNode("test")
 
-        const leftAssoc = Predicate.and(Predicate.and(identityPredicate)(alwaysTrue))(alwaysTrue)
+        const leftAssoc = Node.and(Node.and(identityPredicate)(alwaysTrue))(alwaysTrue)
 
-        const rightAssoc = Predicate.and(identityPredicate)(Predicate.and(alwaysTrue)(alwaysTrue))
+        const rightAssoc = Node.and(identityPredicate)(Node.and(alwaysTrue)(alwaysTrue))
 
         expect(leftAssoc.evaluate(testNode)).toBe(rightAssoc.evaluate(testNode))
       })
@@ -111,7 +110,7 @@ describe("Node Capabilities", () => {
         const testNode = createTestIdentityNode("test")
 
         const original = identityPredicate.evaluate(testNode)
-        const withIdentity = Predicate.and(identityPredicate)(alwaysTrue)
+        const withIdentity = Node.and(identityPredicate)(alwaysTrue)
 
         expect(withIdentity.evaluate(testNode)).toBe(original)
       })
@@ -122,27 +121,27 @@ describe("Node Capabilities", () => {
         const testNode = createTestIdentityNode("test")
 
         // true OR true = true
-        const trueOrTrue = Predicate.or(alwaysTrue)(alwaysTrue)
+        const trueOrTrue = Node.or(alwaysTrue)(alwaysTrue)
         expect(trueOrTrue.evaluate(testNode)).toBe(true)
 
         // true OR false = true
-        const trueOrFalse = Predicate.or(alwaysTrue)(alwaysFalse)
+        const trueOrFalse = Node.or(alwaysTrue)(alwaysFalse)
         expect(trueOrFalse.evaluate(testNode)).toBe(true)
 
         // false OR true = true
-        const falseOrTrue = Predicate.or(alwaysFalse)(alwaysTrue)
+        const falseOrTrue = Node.or(alwaysFalse)(alwaysTrue)
         expect(falseOrTrue.evaluate(testNode)).toBe(true)
 
         // false OR false = false
-        const falseOrFalse = Predicate.or(alwaysFalse)(alwaysFalse)
+        const falseOrFalse = Node.or(alwaysFalse)(alwaysFalse)
         expect(falseOrFalse.evaluate(testNode)).toBe(false)
       })
 
       it("should be commutative: P ∨ Q ≡ Q ∨ P", () => {
         const testNode = createTestIdentityNode("test")
 
-        const pOrQ = Predicate.or(identityPredicate)(alwaysFalse)
-        const qOrP = Predicate.or(alwaysFalse)(identityPredicate)
+        const pOrQ = Node.or(identityPredicate)(alwaysFalse)
+        const qOrP = Node.or(alwaysFalse)(identityPredicate)
 
         expect(pOrQ.evaluate(testNode)).toBe(qOrP.evaluate(testNode))
       })
@@ -151,7 +150,7 @@ describe("Node Capabilities", () => {
         const testNode = createTestIdentityNode("test")
 
         const original = identityPredicate.evaluate(testNode)
-        const withIdentity = Predicate.or(identityPredicate)(alwaysFalse)
+        const withIdentity = Node.or(identityPredicate)(alwaysFalse)
 
         expect(withIdentity.evaluate(testNode)).toBe(original)
       })
@@ -161,8 +160,8 @@ describe("Node Capabilities", () => {
       it("should satisfy logical NOT", () => {
         const testNode = createTestIdentityNode("test")
 
-        const notTrue = Predicate.not(alwaysTrue)
-        const notFalse = Predicate.not(alwaysFalse)
+        const notTrue = Node.not(alwaysTrue)
+        const notFalse = Node.not(alwaysFalse)
 
         expect(notTrue.evaluate(testNode)).toBe(false)
         expect(notFalse.evaluate(testNode)).toBe(true)
@@ -172,7 +171,7 @@ describe("Node Capabilities", () => {
         const testNode = createTestIdentityNode("test")
 
         const original = identityPredicate.evaluate(testNode)
-        const doubleNegated = Predicate.not(Predicate.not(identityPredicate))
+        const doubleNegated = Node.not(Node.not(identityPredicate))
 
         expect(doubleNegated.evaluate(testNode)).toBe(original)
       })
@@ -181,18 +180,18 @@ describe("Node Capabilities", () => {
         const testNode = createTestIdentityNode("test")
 
         // ¬(P ∧ Q) ≡ ¬P ∨ ¬Q
-        const leftSide = Predicate.not(
-          Predicate.and(identityPredicate)(alwaysTrue)
+        const leftSide = Node.not(
+          Node.and(identityPredicate)(alwaysTrue)
         )
-        const rightSide = Predicate.or(Predicate.not(identityPredicate))(Predicate.not(alwaysTrue))
+        const rightSide = Node.or(Node.not(identityPredicate))(Node.not(alwaysTrue))
 
         expect(leftSide.evaluate(testNode)).toBe(rightSide.evaluate(testNode))
 
         // ¬(P ∨ Q) ≡ ¬P ∧ ¬Q
-        const leftSide2 = Predicate.not(
-          Predicate.or(identityPredicate)(alwaysFalse)
+        const leftSide2 = Node.not(
+          Node.or(identityPredicate)(alwaysFalse)
         )
-        const rightSide2 = Predicate.and(Predicate.not(identityPredicate))(Predicate.not(alwaysFalse))
+        const rightSide2 = Node.and(Node.not(identityPredicate))(Node.not(alwaysFalse))
 
         expect(leftSide2.evaluate(testNode)).toBe(rightSide2.evaluate(testNode))
       })
@@ -200,14 +199,14 @@ describe("Node Capabilities", () => {
   })
 
   describe("CapabilityRegistry", () => {
-    const testPredicate: Capabilities.NodePredicate<Node.AnyNode> = {
+    const testPredicate: Node.NodePredicate<Node.IdentityNode> = {
       _id: Symbol.for("test-predicate"),
       evaluate: (_) => true
     }
 
     it("should register and retrieve predicates", async () => {
       const program = Effect.gen(function*() {
-        const registry = yield* Capabilities.CapabilityRegistry
+        const registry = yield* Node.CapabilityRegistry
 
         yield* registry.registerPredicate(testPredicate)
         const retrieved = yield* registry.getPredicate(testPredicate._id)
@@ -216,7 +215,7 @@ describe("Node Capabilities", () => {
       })
 
       const result = await Effect.runPromise(
-        program.pipe(Effect.provide(Capabilities.CapabilityRegistryLive))
+        program.pipe(Effect.provide(Node.CapabilityRegistryLive))
       )
 
       expect(result._id).toBe(testPredicate._id)
@@ -224,18 +223,18 @@ describe("Node Capabilities", () => {
     })
 
     it("should handle multiple predicates", async () => {
-      const predicate1: Capabilities.NodePredicate<Node.AnyNode> = {
+      const predicate1: Node.NodePredicate<Node.IdentityNode> = {
         _id: Symbol.for("predicate-1"),
         evaluate: (_) => true
       }
 
-      const predicate2: Capabilities.NodePredicate<Node.AnyNode> = {
+      const predicate2: Node.NodePredicate<Node.IdentityNode> = {
         _id: Symbol.for("predicate-2"),
         evaluate: (_) => false
       }
 
       const program = Effect.gen(function*() {
-        const registry = yield* Capabilities.CapabilityRegistry
+        const registry = yield* Node.CapabilityRegistry
 
         yield* registry.registerPredicate(predicate1)
         yield* registry.registerPredicate(predicate2)
@@ -247,7 +246,7 @@ describe("Node Capabilities", () => {
       })
 
       const result = await Effect.runPromise(
-        program.pipe(Effect.provide(Capabilities.CapabilityRegistryLive))
+        program.pipe(Effect.provide(Node.CapabilityRegistryLive))
       )
 
       expect(result.retrieved1._id).toBe(predicate1._id)
@@ -257,18 +256,18 @@ describe("Node Capabilities", () => {
     it("should maintain predicate isolation", async () => {
       const testNode = createTestIdentityNode("test")
 
-      const predicate1: Capabilities.NodePredicate<Node.AnyNode> = {
+      const predicate1: Node.NodePredicate<Node.IdentityNode> = {
         _id: Symbol.for("predicate-1"),
         evaluate: (_) => true
       }
 
-      const predicate2: Capabilities.NodePredicate<Node.AnyNode> = {
+      const predicate2: Node.NodePredicate<Node.IdentityNode> = {
         _id: Symbol.for("predicate-2"),
         evaluate: (_) => false
       }
 
       const program = Effect.gen(function*() {
-        const registry = yield* Capabilities.CapabilityRegistry
+        const registry = yield* Node.CapabilityRegistry
 
         yield* registry.registerPredicate(predicate1)
         yield* registry.registerPredicate(predicate2)
@@ -283,7 +282,7 @@ describe("Node Capabilities", () => {
       })
 
       const result = await Effect.runPromise(
-        program.pipe(Effect.provide(Capabilities.CapabilityRegistryLive))
+        program.pipe(Effect.provide(Node.CapabilityRegistryLive))
       )
 
       expect(result.result1).toBe(true)
@@ -292,7 +291,7 @@ describe("Node Capabilities", () => {
   })
 
   describe("NodeEquivalence", () => {
-    const nodeEquivalence: Capabilities.NodeEquivalence<Node.IdentityNode> = {
+    const nodeEquivalence: Node.NodeEquivalence<Node.IdentityNode> = {
       _id: Symbol.for("identity-equivalence"),
       equals: (self, that) => self.id === that.id
     }
@@ -325,7 +324,7 @@ describe("Node Capabilities", () => {
   })
 
   describe("NodeOrdering", () => {
-    const nodeOrdering: Capabilities.NodeOrdering<Node.AnyNode> = {
+    const nodeOrdering: Node.NodeOrdering<Node.IdentityNode> = {
       _id: Symbol.for("id-ordering"),
       compare: (self, that) => {
         if (self.id < that.id) return -1

@@ -3,8 +3,6 @@ import { Chunk, DateTime, Effect, FastCheck, HashMap } from "effect"
 import * as Algebra from "../../src/graph/algebra.js"
 import * as Graph from "../../src/graph/graph.js"
 import * as Node from "../../src/graph/node/node.js"
-import type * as Capabilities from "../../src/node/capabilities.js"
-import * as Predicate from "../../src/node/predicate.js"
 
 describe("Property-Based Tests", () => {
   // Generators for test data
@@ -31,20 +29,35 @@ describe("Property-Based Tests", () => {
 
     switch (tag) {
       case "IdentityNode":
-        return Node.createIdentityNode(baseProps)
+        return new Node.IdentityNode(baseProps)
       case "CanonicalEntityNode":
-        return Node.createCanonicalEntityNode({
+        return new Node.CanonicalEntityNode({
           ...baseProps,
           schemaId: "test-schema",
           value: { test: "data" }
         })
       case "SourceDataNode":
-        return Node.createSourceDataNode({
+        return new Node.SourceDataNode({
           ...baseProps,
           sourceUri: "test://source"
         })
+      case "SchemaNode":
+        return new Node.SchemaNode({
+          ...baseProps,
+          schemaId: "test-schema" as Node.SchemaId,
+          definition: { type: "string" }
+        })
+      case "StrategyNode":
+        return new Node.StrategyNode({
+          ...baseProps,
+          name: "test-strategy",
+          recursionScheme: "Catamorphism",
+          inputSchema: { type: "string" },
+          outputSchema: { type: "string" },
+          logic: { transform: "identity" }
+        })
       default:
-        return Node.createIdentityNode(baseProps)
+        return new Node.IdentityNode(baseProps)
     }
   })
 
@@ -106,7 +119,7 @@ describe("Property-Based Tests", () => {
     })
 
     it("filter with always-true predicate is identity", () => {
-      const alwaysTrue: Capabilities.NodePredicate<Node.AnyNode> = {
+      const alwaysTrue: Node.NodePredicate<Node.IdentityNode> = {
         _id: Symbol.for("always-true"),
         evaluate: (_) => true
       }
@@ -121,7 +134,7 @@ describe("Property-Based Tests", () => {
     })
 
     it("filter with always-false predicate yields empty graph", () => {
-      const alwaysFalse: Capabilities.NodePredicate<Node.AnyNode> = {
+      const alwaysFalse: Node.NodePredicate<Node.IdentityNode> = {
         _id: Symbol.for("always-false"),
         evaluate: (_) => false
       }
@@ -144,8 +157,8 @@ describe("Property-Based Tests", () => {
           predicateArb,
           createNodeArb,
           (p, q, node) => {
-            const pAndQ = Predicate.and(q)(p)
-            const qAndP = Predicate.and(p)(q)
+            const pAndQ = Node.and(q)(p)
+            const qAndP = Node.and(p)(q)
 
             return pAndQ.evaluate(node) === qAndP.evaluate(node)
           }
@@ -162,8 +175,8 @@ describe("Property-Based Tests", () => {
           predicateArb,
           createNodeArb,
           (p, q, r, node) => {
-            const leftAssoc = Predicate.and(r)(Predicate.and(q)(p))
-            const rightAssoc = Predicate.and(Predicate.and(r)(q))(p)
+            const leftAssoc = Node.and(r)(Node.and(q)(p))
+            const rightAssoc = Node.and(Node.and(r)(q))(p)
 
             return leftAssoc.evaluate(node) === rightAssoc.evaluate(node) as boolean
           }
@@ -179,8 +192,8 @@ describe("Property-Based Tests", () => {
           predicateArb,
           createNodeArb,
           (p, q, node) => {
-            const pOrQ = Predicate.or(q)(p)
-            const qOrP = Predicate.or(p)(q)
+            const pOrQ = Node.or(q)(p)
+            const qOrP = Node.or(p)(q)
 
             return pOrQ.evaluate(node) === qOrP.evaluate(node) as boolean
           }
@@ -196,8 +209,8 @@ describe("Property-Based Tests", () => {
           predicateArb,
           createNodeArb,
           (p, q, node) => {
-            const leftSide = Predicate.not(Predicate.and(q)(p))
-            const rightSide = Predicate.or(Predicate.not(q))(Predicate.not(p))
+            const leftSide = Node.not(Node.and(q)(p))
+            const rightSide = Node.or(Node.not(q))(Node.not(p))
 
             return leftSide.evaluate(node) === rightSide.evaluate(node) as boolean
           }
@@ -212,7 +225,7 @@ describe("Property-Based Tests", () => {
           predicateArb,
           createNodeArb,
           (p, node) => {
-            const doubleNegated = Predicate.not(Predicate.not(p))
+            const doubleNegated = Node.not(Node.not(p))
             return p.evaluate(node) === doubleNegated.evaluate(node) as boolean
           }
         ),
@@ -313,7 +326,7 @@ describe("Property-Based Tests", () => {
     })
 
     it("sort preserves node count", () => {
-      const ordering: Capabilities.NodeOrdering<Node.AnyNode> = {
+      const ordering: Node.NodeOrdering<Node.IdentityNode> = {
         _id: Symbol.for("id-ordering"),
         compare: (self, that) => {
           if (self.id < that.id) return -1
@@ -332,7 +345,7 @@ describe("Property-Based Tests", () => {
     })
 
     it("sort is deterministic", () => {
-      const ordering: Capabilities.NodeOrdering<Node.AnyNode> = {
+      const ordering: Node.NodeOrdering<Node.AnyNode> = {
         _id: Symbol.for("id-ordering"),
         compare: (self, that) => {
           if (self.id < that.id) return -1
@@ -340,6 +353,18 @@ describe("Property-Based Tests", () => {
           return 0
         }
       }
+
+      FastCheck.assert(
+        FastCheck.property(graphArb, (graph) => {
+          const sorted1 = graph.pipe(Graph.sort(ordering))
+          const sorted2 = graph.pipe(Graph.sort(ordering))
+
+          // Should produce identical results
+          return Chunk.size(sorted1) === Chunk.size(sorted2) &&
+            Chunk.toArray(sorted1).every((node, i) => node.id === Chunk.toArray(sorted2)[i].id)
+        }),
+        { numRuns: 100 }
+      )
     })
   })
 
@@ -355,7 +380,7 @@ describe("Property-Based Tests", () => {
               .pipe(Graph.filter(p))
               .pipe(Graph.filter(q))
 
-            const combined = graph.pipe(Graph.filter(Predicate.and(q)(p)))
+            const combined = graph.pipe(Graph.filter(Node.and(q)(p)))
 
             return HashMap.size(composed.nodes) === HashMap.size(combined.nodes)
           }
@@ -371,7 +396,7 @@ describe("Property-Based Tests", () => {
           predicateArb,
           predicateArb,
           (graph, p, q) => {
-            const combined = graph.pipe(Graph.filter(Predicate.or(q)(p)))
+            const combined = graph.pipe(Graph.filter(Node.or(q)(p)))
 
             const separate1 = graph.pipe(Graph.filter(p))
             const separate2 = graph.pipe(Graph.filter(q))
@@ -389,7 +414,7 @@ describe("Property-Based Tests", () => {
   describe("Error Handling Properties", () => {
     it("operations on empty graphs don't throw", () => {
       const emptyGraph = Graph.empty()
-      const predicate: Capabilities.NodePredicate<Node.AnyNode> = {
+      const predicate: Node.NodePredicate<Node.IdentityNode> = {
         _id: Symbol.for("test"),
         evaluate: (_) => true
       }
@@ -407,7 +432,7 @@ describe("Property-Based Tests", () => {
     })
 
     it("malformed predicates don't crash system", () => {
-      const throwingPredicate: Capabilities.NodePredicate<Node.AnyNode> = {
+      const throwingPredicate: Node.NodePredicate<Node.IdentityNode> = {
         _id: Symbol.for("throwing"),
         evaluate: (_) => {
           throw new Error("Test error")

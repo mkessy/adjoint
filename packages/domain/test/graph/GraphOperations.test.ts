@@ -2,7 +2,6 @@ import { describe, expect, it } from "@effect/vitest"
 import { Chunk, DateTime, Effect, Equal, HashMap, Option, pipe } from "effect"
 import * as Graph from "../../src/graph/graph.js"
 import * as Node from "../../src/graph/node/node.js"
-import type * as Capabilities from "../../src/node/capabilities.js"
 
 describe("Graph Operations", () => {
   // Test fixtures
@@ -44,12 +43,12 @@ describe("Graph Operations", () => {
   }
 
   describe("filter operation", () => {
-    const identityPredicate: Capabilities.NodePredicate<Node.AnyNode> = {
+    const identityPredicate: Node.NodePredicate<Node.IdentityNode> = {
       _id: Symbol.for("is-identity"),
       evaluate: (node) => Node.isIdentityNode(node)
     }
 
-    const canonicalPredicate: Capabilities.NodePredicate<Node.AnyNode> = {
+    const canonicalPredicate: Node.NodePredicate<Node.CanonicalEntityNode> = {
       _id: Symbol.for("is-canonical"),
       evaluate: (node) => Node.isCanonicalEntityNode(node)
     }
@@ -62,7 +61,7 @@ describe("Graph Operations", () => {
 
       // All remaining nodes should satisfy the predicate
       Array.from(HashMap.values(filteredGraph.nodes)).forEach((node) => {
-        expect(identityPredicate.evaluate(node)).toBe(true)
+        expect(identityPredicate.evaluate(node as Node.IdentityNode)).toBe(true)
       })
     })
 
@@ -102,12 +101,12 @@ describe("Graph Operations", () => {
   })
 
   describe("find operation", () => {
-    const identityPredicate: Capabilities.NodePredicate<Node.AnyNode> = {
+    const identityPredicate: Node.NodePredicate<Node.IdentityNode> = {
       _id: Symbol.for("is-identity"),
       evaluate: (node) => Node.isIdentityNode(node)
     }
 
-    const nonExistentPredicate: Capabilities.NodePredicate<Node.AnyNode> = {
+    const nonExistentPredicate: Node.NodePredicate<Node.IdentityNode> = {
       _id: Symbol.for("non-existent"),
       evaluate: (_) => false
     }
@@ -161,7 +160,7 @@ describe("Graph Operations", () => {
   })
 
   describe("sort operation", () => {
-    const idOrdering: Capabilities.NodeOrdering<Node.AnyNode> = {
+    const idOrdering: Node.NodeOrdering<Node.IdentityNode> = {
       _id: Symbol.for("id-ordering"),
       compare: (self, that) => {
         if (self.id < that.id) return -1
@@ -170,7 +169,7 @@ describe("Graph Operations", () => {
       }
     }
 
-    const reverseOrdering: Capabilities.NodeOrdering<Node.AnyNode> = {
+    const reverseOrdering: Node.NodeOrdering<Node.IdentityNode> = {
       _id: Symbol.for("reverse-ordering"),
       compare: (self, that) => {
         if (self.id > that.id) return -1
@@ -187,7 +186,7 @@ describe("Graph Operations", () => {
 
       // Check if sorted
       for (let i = 1; i < nodeArray.length; i++) {
-        const comparison = idOrdering.compare(nodeArray[i - 1], nodeArray[i])
+        const comparison = idOrdering.compare(nodeArray[i - 1] as Node.IdentityNode, nodeArray[i] as Node.IdentityNode)
         expect(comparison).toBeLessThanOrEqual(0)
       }
     })
@@ -225,7 +224,7 @@ describe("Graph Operations", () => {
       // Antisymmetry and transitivity
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
-          const comparison = idOrdering.compare(nodes[i], nodes[j])
+          const comparison = idOrdering.compare(nodes[i] as Node.IdentityNode, nodes[j] as Node.IdentityNode)
           expect(comparison).toBeLessThanOrEqual(0)
         }
       }
@@ -249,12 +248,12 @@ describe("Graph Operations", () => {
   })
 
   describe("Operation Composition", () => {
-    const identityPredicate: Capabilities.NodePredicate<Node.AnyNode> = {
+    const identityPredicate: Node.NodePredicate<Node.IdentityNode> = {
       _id: Symbol.for("is-identity"),
       evaluate: (node) => Node.isIdentityNode(node)
     }
 
-    const idOrdering: Capabilities.NodeOrdering<Node.AnyNode> = {
+    const idOrdering: Node.NodeOrdering<Node.IdentityNode> = {
       _id: Symbol.for("id-ordering"),
       compare: (self, that) => {
         if (self.id < that.id) return -1
@@ -276,12 +275,12 @@ describe("Graph Operations", () => {
 
       // All nodes should satisfy predicate
       nodeArray.forEach((node) => {
-        expect(identityPredicate.evaluate(node)).toBe(true)
+        expect(identityPredicate.evaluate(node as Node.IdentityNode)).toBe(true)
       })
 
       // Should be sorted
       for (let i = 1; i < nodeArray.length; i++) {
-        const comparison = idOrdering.compare(nodeArray[i - 1], nodeArray[i])
+        const comparison = idOrdering.compare(nodeArray[i - 1] as Node.IdentityNode, nodeArray[i] as Node.IdentityNode)
         expect(comparison).toBeLessThanOrEqual(0)
       }
     })
@@ -312,7 +311,7 @@ describe("Graph Operations", () => {
       )
       const largeGraph = Graph.fromNodes(largeNodes)
 
-      const identityPredicate: Capabilities.NodePredicate<Node.AnyNode> = {
+      const identityPredicate: Node.NodePredicate<Node.IdentityNode> = {
         _id: Symbol.for("is-identity"),
         evaluate: (node) => Node.isIdentityNode(node)
       }
@@ -327,7 +326,7 @@ describe("Graph Operations", () => {
 
     it("should maintain referential transparency", () => {
       const graph = createMixedGraph()
-      const identityPredicate: Capabilities.NodePredicate<Node.AnyNode> = {
+      const identityPredicate: Node.NodePredicate<Node.IdentityNode> = {
         _id: Symbol.for("is-identity"),
         evaluate: (node) => Node.isIdentityNode(node)
       }
