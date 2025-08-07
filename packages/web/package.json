@@ -21,7 +21,6 @@
     },
     "dependencies": {
         "@adjoint/domain": "workspace:^",
-        "@adjoint/nlp-wink": "workspace:^",
         "@effect-rx/rx": "latest",
         "@effect-rx/rx-react": "^0.42.4",
         "@effect/platform": "latest",
@@ -32,6 +31,7 @@
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
         "typescript": "^5.9.2",
+        "wink-distance": "^2.0.2",
         "wink-eng-lite-web-model": "^1.8.1",
         "wink-nlp": "^2.4.0"
     },

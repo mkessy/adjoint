@@ -18,8 +18,7 @@ export default defineWorkspace([
 ], {
   resolve: {
     alias: {
-      "@adjoint/domain": path.resolve(__dirname, "./packages/domain/src"),
-      "@adjoint/nlp-wink": path.resolve(__dirname, "./packages/nlp-wink/src")
+      "@adjoint/domain": path.resolve(__dirname, "./packages/domain/src")
     }
   }
 })

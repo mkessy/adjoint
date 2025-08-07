@@ -1,7 +1,7 @@
 import { Result, Rx } from "@effect-rx/rx"
 import { Effect } from "effect"
-import { NlpProcessingService } from "../../nlp/processing.js"
 import type * as Types from "../../nlp/types.js"
+import { NlpProcessingService } from "../../nlp/worker.js"
 import { NlpProcessingServiceProxyLive } from "./NlpProcessingServiceProxy.js"
 
 /**

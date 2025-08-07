@@ -1,5 +1,5 @@
 import { Graph } from "@adjoint/domain"
-import { useRxRefresh, useRxValue } from "@effect-rx/rx-react"
+import { Result, useRxRefresh, useRxValue } from "@effect-rx/rx-react"
 import { DateTime } from "effect"
 import React, { Suspense } from "react"
 import { extractDataSections, extractTransformations } from "../services/GraphDataAdapter.js"
@@ -13,8 +13,10 @@ const GraphWorkspaceContent: React.FC = () => {
   const canUndo = useRxValue(canUndoRx)
   const canRedo = useRxValue(canRedoRx)
 
-  const dataSections = extractDataSections(currentGraph.value!)
-  const transformations = extractTransformations(currentGraph.value!) // Level 0 for now
+  const dataSections = Result.map(currentGraph, (graph) => extractDataSections(graph))
+  const transformations = Result.map(currentGraph, (graph) => extractTransformations(graph)) // Level 0 for now
+
+  console.log(dataSections, transformations)
 
   const handleCommit = () => {
     // Example: Add a new node and commit
@@ -24,7 +26,7 @@ const GraphWorkspaceContent: React.FC = () => {
       createdAt: DateTime.unsafeFromDate(new Date()),
       lastSeenBy: "user" as Graph.Node.NodeId
     })
-    const updatedGraph = Graph.Graph.addNode(currentGraph.value!, newNode)
+    Graph.Graph.addNode(Result.getOrThrow(currentGraph), newNode)
     commitGraph()
   }
 
@@ -38,23 +40,33 @@ const GraphWorkspaceContent: React.FC = () => {
       </div>
 
       <h3>Data Sections:</h3>
-      {dataSections.length === 0 ? <p>No data sections found. Try adding some nodes.</p> : (
-        dataSections.map((section) => (
-          <div key={section.id} style={{ border: "1px solid #ccc", padding: "0.5rem", margin: "0.5rem 0" }}>
-            <h4>{section.title} (Level: {section.level})</h4>
-            <ul>
-              {section.data.map((item, index) => <li key={index}>{item}</li>)}
-            </ul>
-          </div>
-        ))
-      )}
+      {Result.match(dataSections, {
+        onInitial: () => <p>Loading data sections...</p>,
+        onSuccess: (sections) =>
+          sections.value.map((section: any) => (
+            <div key={section.id} style={{ border: "1px solid #ccc", padding: "0.5rem", margin: "0.5rem 0" }}>
+              <h4>{section.title} (Level: {section.level})</h4>
+              <ul>
+                {section.data.map((item: any, index: number) => <li key={index}>{item}</li>)}
+              </ul>
+            </div>
+          )),
+        onFailure: () => <p>No data sections found. Try adding some nodes.</p>
+      })}
 
       <h3>Transformations:</h3>
-      {transformations.length === 0 ? <p>No transformations found.</p> : (
-        <ul>
-          {transformations.map((t, index) => <li key={index}>{t.op} (from: {t.from}, to: {t.to})</li>)}
-        </ul>
-      )}
+      {Result.match(transformations, {
+        onInitial: () => <p>Loading transformations...</p>,
+        onSuccess: (transforms) =>
+          transforms.value.length === 0 ? <p>No transformations found.</p> : (
+            <ul>
+              {transforms.value.map((t: any, index: number) => (
+                <li key={index}>{t.op} (from: {t.from}, to: {t.to})</li>
+              ))}
+            </ul>
+          ),
+        onFailure: () => <p>Error loading transformations.</p>
+      })}
     </div>
   )
 }

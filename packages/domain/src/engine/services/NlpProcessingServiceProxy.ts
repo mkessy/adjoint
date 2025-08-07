@@ -1,6 +1,6 @@
-import type { NlpProcessingError } from "@adjoint/domain/nlp/processing"
-import { NlpProcessingService } from "@adjoint/domain/nlp/processing"
 import * as Types from "@adjoint/domain/nlp/types"
+import type { NlpProcessingError } from "@adjoint/domain/nlp/worker"
+import { NlpProcessingService } from "@adjoint/domain/nlp/worker"
 import type { DocumentProcessingSuccess } from "@adjoint/domain/nlp/worker-protocol"
 import {
   CreateBM25IndexRequest,

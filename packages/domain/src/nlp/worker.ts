@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
 import type { Option } from "effect"
 import { Context, Data, Effect, Layer, Ref } from "effect"
 import model from "wink-eng-lite-web-model"
@@ -10,12 +9,10 @@ import { NodeType } from "./NlpGraph.js"
 import * as Types from "./types.js"
 import { DocumentProcessingSuccess } from "./worker-protocol.js"
 
-// Import wink utilities directly
-const winkDistance = require("wink-distance")
-const BM25VectorizerImpl = require("wink-nlp/utilities/bm25-vectorizer")
+import winkDistance from "wink-distance"
+import bm25VectorizerFactory from "wink-nlp/utilities/bm25-vectorizer"
 
 const { cosine } = winkDistance.bow
-const BM25Vectorizer = BM25VectorizerImpl
 
 const nlp = winkNlp(model)
 const its = nlp.its
@@ -84,7 +81,7 @@ export const NlpProcessingServiceLive = Layer.effect(
     const graphState = yield* GraphStateService
     const tokenStore = yield* Ref.make<Map<Types.DocumentId, Array<string>>>(new Map())
     const learnedDocs = yield* Ref.make<Array<Types.DocumentId>>([])
-    const bm25 = BM25Vectorizer()
+    const bm25 = bm25VectorizerFactory()
 
     const processDocument = (
       documentId: Types.DocumentId,
@@ -185,14 +182,16 @@ export const NlpProcessingServiceLive = Layer.effect(
         const queryTokens = nlp.readDoc(query).tokens().out(its.normal)
         const queryBOW = bm25.bowOf(queryTokens)
         const docIds = yield* Ref.get(learnedDocs)
+        const tokenStore_ = yield* Ref.get(tokenStore)
 
-        const results = docIds.map((docId, i) => {
-          const docBOW = bm25.doc(i).out(its.bow)
-          const distance = cosine(queryBOW, docBOW)
-          const score = 1 - distance
-          return { documentId: docId, score }
-        })
-
+        const results = yield* Effect.forEach(docIds, (docId) =>
+          Effect.sync(() => {
+            const docTokens = tokenStore_.get(docId) || []
+            const docBOW = bm25.bowOf(docTokens)
+            const distance = cosine(queryBOW, docBOW)
+            const score = 1 - distance
+            return { documentId: docId, score }
+          }))
         return results
           .filter((r) => r.score > 0)
           .sort((a, b) => b.score - a.score)
@@ -200,7 +199,9 @@ export const NlpProcessingServiceLive = Layer.effect(
 
     const finalizeIndex = () =>
       Effect.sync(() => {
-        bm25.out(its.docTermMatrix)
+        // Finalize the BM25 index - this prepares it for querying
+        // The BM25 vectorizer doesn't need explicit finalization in wink-nlp
+        return void 0
       })
 
     return NlpProcessingService.of({

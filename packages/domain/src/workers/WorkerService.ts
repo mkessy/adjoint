@@ -27,7 +27,7 @@ const processTokenization = (documentId: Types.DocumentId, input: unknown) =>
     const tokens: Array<Types.Token> = []
     const sentences: Array<Types.Sentence> = []
 
-    doc.tokens().each((t, i) => {
+    doc.tokens().each((t: any, i: any) => {
       tokens.push(
         new Types.Token({
           id: Types.createTokenId(`${documentId}-t${i}`),
@@ -42,7 +42,7 @@ const processTokenization = (documentId: Types.DocumentId, input: unknown) =>
       )
     })
 
-    sentencesRaw.forEach((s, i) => {
+    sentencesRaw.forEach((s: any, i: any) => {
       const sentenceId = Types.createSentenceId(`${documentId}-s${i}`)
       const sentenceTokens = doc
         .sentences()

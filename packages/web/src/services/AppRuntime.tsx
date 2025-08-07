@@ -15,7 +15,7 @@ export const graphWorkspaceRxRuntime = Engine.GraphWorkspaceRxRuntime
 const AppLayer = Layer.mergeAll(
   // Platform layers
   BrowserHttpClient.layerXMLHttpRequest,
-  BrowserWorker.layer(() => new Worker(new URL("../../domain/src/nlp/worker.ts", import.meta.url), { type: "module" })),
+  BrowserWorker.layer(() => new Worker(new URL("../workers/nlp.worker.ts", import.meta.url), { type: "module" })),
   // Our service layers - use the one from domain
   Engine.WorkspaceStateServiceLive
   // Engine.WinkNlpServiceLive

@@ -1,7 +1,7 @@
 import { Effect } from "effect"
 import { describe, expect, it } from "vitest"
-import { NlpProcessingService, NlpProcessingServiceLive } from "../../src/nlp/processing.js"
 import * as Types from "../../src/nlp/types.js"
+import { NlpProcessingService, NlpProcessingServiceLive } from "../../src/nlp/worker.js"
 
 describe("NLP Processing System", () => {
   describe("File Upload Processing", () => {

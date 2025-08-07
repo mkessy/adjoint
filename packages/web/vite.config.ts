@@ -8,7 +8,6 @@ export default defineConfig({
     alias: {
       "@": resolve(__dirname, "./src"),
       "@adjoint/domain": resolve(__dirname, "../domain/build/esm"),
-      "@adjoint/nlp-wink": resolve(__dirname, "../nlp-wink/build/esm"),
       // Redirect platform-specific imports to browser-compatible versions
       "@effect/platform-node-shared": "@effect/platform-browser",
       "@effect/platform-bun": "@effect/platform-browser",
